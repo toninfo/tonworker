@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
+import { I18nProvider } from "./i18n/react";
 import { initTheme } from "./theme";
 import { platformOS } from "./tauri";
 import "./tailwind.css";
@@ -19,6 +20,9 @@ window.addEventListener("drop", (e) => e.preventDefault());
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    {/* 默认中文；Settings 可切回英文；测试里 setLocale("en") */}
+    <I18nProvider>
+      <App />
+    </I18nProvider>
   </React.StrictMode>,
 );

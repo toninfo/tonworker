@@ -11,6 +11,7 @@ import {
   type Persona,
   type RecentChannel,
 } from "../api";
+import { useI18n } from "../i18n/react";
 import { Icon } from "./Icon";
 import { InboxItemCard } from "./InboxItemCard";
 import { InboxConfigure } from "./InboxConfigure";
@@ -23,6 +24,7 @@ const ICON_FOR: Record<string, "diamond" | "chat" | "code"> = {
   code: "code",
 };
 
+// label 为英文源 key，渲染时 t()。
 const KIND_TABS: { key: string; label: string }[] = [
   { key: "all", label: "All" },
   { key: "approval", label: "Approvals" },
@@ -56,6 +58,7 @@ export function InboxView({
 }: {
   onOpenSession: (sessionId: string, workspace: string, agent: string) => void;
 }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState<"pending" | "configure">("pending");
   const [items, setItems] = useState<InboxItem[]>([]);
   const [personas, setPersonas] = useState<Persona[] | null>(null);
@@ -85,11 +88,11 @@ export function InboxView({
       .then((cs) => setSlackConnected(!!cs.find((c) => c.name === "slack" && c.connected)))
       .catch(() => {});
     getRecentChannels().then(setRecent).catch(() => setRecent([]));
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       load();
       loadRouting(); // edits happen on the Configure tab; keep Pending's status line honest
     }, 4000);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, []);
 
   const resolve = async (id: string, resolution: string) => {
@@ -122,7 +125,7 @@ export function InboxView({
     return (
       <button
         className="inbox-session-chip"
-        title={exists ? `Open “${label}”` : "Session unavailable"}
+        title={exists ? t("Open “{label}”", { label }) : t("Session unavailable")}
         disabled={!exists}
         onClick={() =>
           exists && onOpenSession(it.session_id, it.session_workspace || "", it.session_agent || "cowork")
@@ -145,8 +148,10 @@ export function InboxView({
       <div className="flex-1 min-w-0 overflow-y-auto hairline-scroll">
         <div className="max-w-4xl mx-auto px-7 py-6">
           <PanelHead
-            title="Inbox"
-            sub="Approvals, questions, and notifications from your coworkers — including sessions running unattended."
+            title={t("Inbox")}
+            sub={t(
+              "Approvals, questions, and notifications from your coworkers — including sessions running unattended.",
+            )}
           />
 
           <div className="flex gap-5 border-b border-line mb-4">
@@ -161,7 +166,7 @@ export function InboxView({
                 load();
               }}
             >
-              Pending
+              {t("Pending")}
               {items.length > 0 && (
                 <span className="text-[11px] px-1.5 rounded-full bg-accentSoft text-accent leading-4">
                   {items.length}
@@ -173,7 +178,7 @@ export function InboxView({
               data-testid="inbox-tab-configure"
               onClick={() => setTab("configure")}
             >
-              Configure
+              {t("Configure")}
               {unroutedCount > 0 && (
                 <span className="text-[11px] px-1.5 rounded-full bg-warnSoft text-warnInk leading-4">
                   ⚠ {unroutedCount}
@@ -189,18 +194,17 @@ export function InboxView({
               <div className="text-[12px] text-faint -mt-1 mb-4" data-testid="inbox-routing">
                 {routing ? (
                   <span>
-                    Also delivered to{" "}
-                    <span className="text-muted" title={routing}>
-                      {routingLabel}
-                    </span>{" "}
-                    — replies there resolve items here.{" "}
+                    {t("Also delivered to {dest} — replies there resolve items here. ", {
+                      dest: routingLabel || "",
+                    })}
                   </span>
                 ) : slackConnected ? (
-                  <span>Delivered here only. </span>
+                  <span>{t("Delivered here only. ")}</span>
                 ) : (
                   <span>
-                    Delivered here only. Connect Slack (Connectors page) to also get these in a
-                    channel — more platforms later.{" "}
+                    {t(
+                      "Delivered here only. Connect Slack (Connectors page) to also get these in a channel — more platforms later. ",
+                    )}
                   </span>
                 )}
                 <button
@@ -208,14 +212,18 @@ export function InboxView({
                   data-testid="inbox-route-configure"
                   onClick={() => setTab("configure")}
                 >
-                  Configure ›
+                  {t("Configure ›")}
                 </button>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap mb-4" data-testid="inbox-filters">
-                {KIND_TABS.map((t) => (
-                  <button key={t.key} className={CHIP(kind === t.key)} onClick={() => setKind(t.key)}>
-                    {t.label}
+                {KIND_TABS.map((tabDef) => (
+                  <button
+                    key={tabDef.key}
+                    className={CHIP(kind === tabDef.key)}
+                    onClick={() => setKind(tabDef.key)}
+                  >
+                    {t(tabDef.label)}
                   </button>
                 ))}
                 {personasWithItems.length > 1 && (
@@ -225,7 +233,7 @@ export function InboxView({
                       className={CHIP(personaFilter === "all")}
                       onClick={() => setPersonaFilter("all")}
                     >
-                      All coworkers
+                      {t("All coworkers")}
                     </button>
                     {personasWithItems.map((p) => (
                       <button
@@ -242,7 +250,9 @@ export function InboxView({
 
               {visible.length === 0 ? (
                 <div className="manage-empty">
-                  {items.length === 0 ? "Nothing pending." : "Nothing pending for this filter."}
+                  {items.length === 0
+                    ? t("Nothing pending.")
+                    : t("Nothing pending for this filter.")}
                 </div>
               ) : null}
 

@@ -1,19 +1,20 @@
 import { useState } from "react";
 import { addModel, getSettings, removeModel, setDefaultModel } from "../api";
+import { useI18n } from "../i18n/react";
 
 // Cloud-account providers dispatch by a family segment baked into the model id
 // (`bedrock:claude/…`, `vertex:openweight/…`). The add-model row shows a dropdown so
 // users pick the family instead of memorizing the prefix; curated matrix ids already
 // carry theirs.
-const MODEL_FAMILIES: Record<string, { value: string; label: string }[]> = {
+const MODEL_FAMILY_KEYS: Record<string, { value: string; labelKey: string }[]> = {
   bedrock: [
-    { value: "claude", label: "Claude family" },
-    { value: "other", label: "Other models" },
+    { value: "claude", labelKey: "Claude family" },
+    { value: "other", labelKey: "Other models" },
   ],
   vertex: [
-    { value: "gemini", label: "Gemini family" },
-    { value: "claude", label: "Claude family" },
-    { value: "openweight", label: "Open-weight" },
+    { value: "gemini", labelKey: "Gemini family" },
+    { value: "claude", labelKey: "Claude family" },
+    { value: "openweight", labelKey: "Open-weight" },
   ],
 };
 
@@ -38,9 +39,10 @@ export function ModelChecklist({
   labels?: Record<string, string>; // curated display names (full id → label); raw id when absent
   onChanged: (next: { models: string[]; model: string }) => void;
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState("");
-  const families = MODEL_FAMILIES[provider];
-  const [family, setFamily] = useState(families?.[0]?.value || "");
+  const familyDefs = MODEL_FAMILY_KEYS[provider];
+  const [family, setFamily] = useState(familyDefs?.[0]?.value || "");
 
   const provOf = (id: string) => {
     const i = id.indexOf(":");
@@ -73,7 +75,7 @@ export function ModelChecklist({
     let typed = draft.trim();
     if (!typed) return;
     // Fold the family choice into the id unless the user already typed one.
-    if (families && !families.some((f) => typed.startsWith(`${f.value}/`))) {
+    if (familyDefs && !familyDefs.some((f) => typed.startsWith(`${f.value}/`))) {
       typed = `${family}/${typed}`;
     }
     const res = await addModel(prefixed(typed));
@@ -94,7 +96,7 @@ export function ModelChecklist({
                 type="checkbox"
                 checked={checked(id)}
                 disabled={isDefault}
-                title={isDefault ? "The default model is always shown — make another model default first" : undefined}
+                title={isDefault ? t("The default model is always shown — make another model default first") : undefined}
                 onChange={(e) => tick(id, e.target.checked)}
               />
               <span className="mlist-name" title={id}>
@@ -102,32 +104,32 @@ export function ModelChecklist({
               </span>
             </label>
             {isDefault ? (
-              <span className="mlist-default">default</span>
+              <span className="mlist-default">{t("default")}</span>
             ) : (
               <button className="mlist-make" onClick={() => makeDefault(id)}>
-                Make default
+                {t("Make default")}
               </button>
             )}
           </div>
         );
       })}
       <div className="mlist-add">
-        {families && (
+        {familyDefs && (
           <select
             value={family}
             onChange={(e) => setFamily(e.target.value)}
-            aria-label="Model family"
+            aria-label={t("Model family")}
             data-testid="mlist-family"
           >
-            {families.map((f) => (
+            {familyDefs.map((f) => (
               <option key={f.value} value={f.value}>
-                {f.label}
+                {t(f.labelKey)}
               </option>
             ))}
           </select>
         )}
         <input
-          placeholder="Add another model…"
+          placeholder={t("Add another model…")}
           value={draft}
           spellCheck={false}
           autoComplete="off"
@@ -135,7 +137,7 @@ export function ModelChecklist({
           onKeyDown={(e) => e.key === "Enter" && add()}
         />
         <button className="btn-primary sm" onClick={add} disabled={!draft.trim()}>
-          Add
+          {t("Add")}
         </button>
       </div>
     </div>

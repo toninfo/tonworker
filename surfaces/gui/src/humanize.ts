@@ -1,9 +1,10 @@
-// UX-015 (§33): tool calls render as English one-liners. The model does NOT emit a purpose
+// UX-015 (§33): tool calls render as one-liners (i18n via t()). The model does NOT emit a purpose
 // per call — the stream is name+args+result — so the sentence is synthesized here from
 // per-tool templates. `run_shell` is the exception: its optional `description` argument is
 // model-written intent and is preferred when present. Fallback: "Used <tool> — <short args>".
 
 import { shortArgs } from "./components/ApprovalCard";
+import { t } from "./i18n";
 
 // A one-line sentence in three segments so the UI can emphasize the object:
 // "Read " + <b>runbook.md</b> + " from the shared folder".
@@ -22,6 +23,7 @@ function messageTarget(target: string): { platform: string; tail: string } {
   const [platform, ...rest] = String(target).split(":");
   const chat = rest[0] || "";
   const tail = chat.includes("/") ? chat.split("/").pop() || chat : chat;
+  // 品牌名保留英文
   const names: Record<string, string> = { slack: "Slack", telegram: "Telegram" };
   return { platform: names[platform] || platform, tail };
 }
@@ -32,7 +34,8 @@ export function humanizeTool(name: string, args: any): HumanLine {
     case "run_shell": {
       const cmd = trunc(String(a.command ?? ""), 60);
       const desc = typeof a.description === "string" && a.description.trim() ? a.description.trim() : "";
-      const pre = a.run_in_background ? "Started in the background: " : "Ran ";
+      // description 为模型原文，不翻译
+      const pre = a.run_in_background ? t("Started in the background: ") : t("Ran ");
       return {
         pre,
         obj: cmd,
@@ -40,21 +43,21 @@ export function humanizeTool(name: string, args: any): HumanLine {
       };
     }
     case "shell_task_output":
-      return { pre: "Checked on a background command" };
+      return { pre: t("Checked on a background command") };
     case "shell_task_kill":
-      return { pre: "Stopped a background command" };
+      return { pre: t("Stopped a background command") };
     case "read_file":
-      return { pre: "Read ", obj: baseName(String(a.path ?? "a file")) };
+      return { pre: t("Read "), obj: a.path != null ? baseName(String(a.path)) : t("a file") };
     case "write_file":
-      return { pre: "Wrote ", obj: baseName(String(a.path ?? "a file")) };
+      return { pre: t("Wrote "), obj: a.path != null ? baseName(String(a.path)) : t("a file") };
     case "replace_in_file":
     case "apply_patch":
     case "apply_unified_diff":
-      return { pre: "Edited ", obj: a.path ? baseName(String(a.path)) : "files" };
+      return { pre: t("Edited "), obj: a.path ? baseName(String(a.path)) : t("files") };
     case "grep":
-      return { pre: "Searched the code for ", obj: `“${trunc(String(a.pattern ?? ""), 40)}”` };
+      return { pre: t("Searched the code for "), obj: `“${trunc(String(a.pattern ?? ""), 40)}”` };
     case "git_log":
-      return { pre: "Looked through recent git history" };
+      return { pre: t("Looked through recent git history") };
     case "todo_write": {
       // `todos` is current; `items` renders histories from before the rename (the old
       // key breaks Together's GLM-5.2 chat template — see coworker/tools/todo.py).
@@ -63,20 +66,20 @@ export function humanizeTool(name: string, args: any): HumanLine {
         const it = items[0] || {};
         const status = String(it.status || "").replace(/_/g, " ");
         return {
-          pre: "Updated the plan — ",
+          pre: t("Updated the plan — "),
           obj: `“${trunc(String(it.content ?? ""), 70)}”`,
           ...(status ? { post: ` → ${status}` } : {}),
         };
       }
-      return { pre: `Updated the plan — ${items.length} items` };
+      return { pre: t("Updated the plan — {n} items", { n: items.length }) };
     }
     case "send_message": {
       const { platform, tail } = messageTarget(String(a.target ?? ""));
-      if (!tail) return { pre: "Sent a message" };
-      return { pre: `Sent a ${platform} message to `, obj: tail };
+      if (!tail) return { pre: t("Sent a message") };
+      return { pre: t("Sent a {platform} message to ", { platform }), obj: tail };
     }
     case "web_search":
-      return { pre: "Searched the web — ", obj: `“${trunc(String(a.query ?? ""), 60)}”` };
+      return { pre: t("Searched the web — "), obj: `“${trunc(String(a.query ?? ""), 60)}”` };
     case "web_fetch": {
       let host = String(a.url ?? "");
       try {
@@ -84,23 +87,23 @@ export function humanizeTool(name: string, args: any): HumanLine {
       } catch {
         /* keep raw */
       }
-      return { pre: "Read a web page — ", obj: trunc(host, 50) };
+      return { pre: t("Read a web page — "), obj: trunc(host, 50) };
     }
     case "explore":
-      return { pre: "Sent a sub-agent to explore — ", obj: `“${trunc(String(a.task ?? a.prompt ?? ""), 60)}”` };
+      return { pre: t("Sent a sub-agent to explore — "), obj: `“${trunc(String(a.task ?? a.prompt ?? ""), 60)}”` };
     case "load_skill":
       // SKILLS-SPEC §4.1 #4 — the trust line: the transcript always shows the moment a
       // skill's instructions were picked up, model-invoked or forced via /skill.
-      return { pre: "Used skill: ", obj: String(a.name ?? "") };
+      return { pre: t("Used skill: "), obj: String(a.name ?? "") };
     case "ask_user":
-      return { pre: "Asked you a question" };
+      return { pre: t("Asked you a question") };
     case "propose_plan":
-      return { pre: "Proposed a plan" };
+      return { pre: t("Proposed a plan") };
     case "request_directory":
-      return { pre: "Asked for folder access — ", obj: String(a.path ?? "") };
+      return { pre: t("Asked for folder access — "), obj: String(a.path ?? "") };
     default: {
       const rest = trunc(shortArgs(a), 80);
-      return { pre: `Used ${name}`, ...(rest ? { post: ` — ${rest}` } : {}) };
+      return { pre: t("Used {name}", { name }), ...(rest ? { post: ` — ${rest}` } : {}) };
     }
   }
 }
@@ -111,37 +114,37 @@ export function humanizeApprovalTitle(name: string, args: any): HumanLine {
   const a = args && typeof args === "object" ? args : {};
   switch (name) {
     case "write_file":
-      return { pre: "Write ", obj: baseName(String(a.path ?? "a file")) };
+      return { pre: t("Write "), obj: a.path != null ? baseName(String(a.path)) : t("a file") };
     case "replace_in_file":
     case "apply_patch":
     case "apply_unified_diff":
-      return { pre: "Edit ", obj: a.path ? baseName(String(a.path)) : "files" };
+      return { pre: t("Edit "), obj: a.path ? baseName(String(a.path)) : t("files") };
     case "run_shell": {
       const desc = typeof a.description === "string" && a.description.trim() ? a.description.trim() : "";
       return {
-        pre: "Run a command",
+        pre: t("Run a command"),
         ...(desc ? { post: ` — ${desc.charAt(0).toLowerCase()}${desc.slice(1)}` } : {}),
       };
     }
     case "send_message": {
       const { tail } = messageTarget(String(a.target ?? ""));
-      return tail ? { pre: "Send a message to ", obj: tail } : { pre: "Send a message" };
+      return tail ? { pre: t("Send a message to "), obj: tail } : { pre: t("Send a message") };
     }
     case "send_file": {
       const { tail } = messageTarget(String(a.target ?? ""));
-      return tail ? { pre: "Send a file to ", obj: tail } : { pre: "Send a file" };
+      return tail ? { pre: t("Send a file to "), obj: tail } : { pre: t("Send a file") };
     }
     case "create_scheduled_task":
       return a.title
-        ? { pre: "Create the automation ", obj: `“${trunc(String(a.title), 60)}”` }
-        : { pre: "Create an automation" };
+        ? { pre: t("Create the automation "), obj: `“${trunc(String(a.title), 60)}”` }
+        : { pre: t("Create an automation") };
     case "save_skill":
       // SKILLS-SPEC §5.2/§7: "Add", never "install"; destination is "your skills".
       return a.name
-        ? { pre: "Add skill ", obj: String(a.name), post: " to your skills" }
-        : { pre: "Add a skill to your skills" };
+        ? { pre: t("Add skill "), obj: String(a.name), post: t(" to your skills") }
+        : { pre: t("Add a skill to your skills") };
     default:
-      return { pre: `Use ${name}` };
+      return { pre: t("Use {name}", { name }) };
   }
 }
 
@@ -150,19 +153,19 @@ export function humanizeAsk(name: string, args: any): HumanLine {
   const a = args && typeof args === "object" ? args : {};
   switch (name) {
     case "run_shell":
-      return { pre: "Wanted to run ", obj: trunc(String(a.command ?? ""), 60) };
+      return { pre: t("Wanted to run "), obj: trunc(String(a.command ?? ""), 60) };
     case "write_file":
-      return { pre: "Wanted to write ", obj: baseName(String(a.path ?? "a file")) };
+      return { pre: t("Wanted to write "), obj: a.path != null ? baseName(String(a.path)) : t("a file") };
     case "replace_in_file":
     case "apply_patch":
     case "apply_unified_diff":
-      return { pre: "Wanted to edit ", obj: a.path ? baseName(String(a.path)) : "files" };
+      return { pre: t("Wanted to edit "), obj: a.path ? baseName(String(a.path)) : t("files") };
     case "send_message": {
       const { platform, tail } = messageTarget(String(a.target ?? ""));
-      if (!tail) return { pre: "Wanted to send a message" };
-      return { pre: `Wanted to message `, obj: tail, post: ` on ${platform}` };
+      if (!tail) return { pre: t("Wanted to send a message") };
+      return { pre: t("Wanted to message "), obj: tail, post: t(" on {platform}", { platform }) };
     }
     default:
-      return { pre: `Wanted to use ${name}` };
+      return { pre: t("Wanted to use {name}", { name }) };
   }
 }

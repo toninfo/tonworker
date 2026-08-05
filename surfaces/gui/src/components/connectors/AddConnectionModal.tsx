@@ -8,6 +8,7 @@ import {
   type Connector,
 } from "../../api";
 import { ConnectorBadge } from "../../connectors/ConnectorIcon";
+import { useI18n } from "../../i18n/react";
 import { ConnectSetup } from "../ManageTabs";
 import { CloudSignInInline, CloudStatusPending } from "./CloudSignIn";
 import { PILL_ACCENT, PILL_LINE, TAG_ACCENT } from "./ui";
@@ -33,6 +34,7 @@ export function AddConnectionModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const { t } = useI18n();
   // MCP-backed one-click (§42): local OAuth against the vendor's hosted MCP server —
   // with manual fields alongside (jira, asana) it's a second mode; alone (monday)
   // it IS the connect flow.
@@ -45,6 +47,7 @@ export function AddConnectionModal({
     c.name === "attio" ||
     (mcpBacked && c.fields.length > 0);
   const [pane, setPane] = useState<"one" | "manual">("one");
+  const heading = title || t("Connect {name}", { name: c.title });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -58,14 +61,16 @@ export function AddConnectionModal({
       <div
         className="absolute left-1/2 top-[14%] -translate-x-1/2 w-[480px] max-w-[calc(100vw-2rem)] bg-panel rounded-2xl border border-line shadow-2xl"
         role="dialog"
-        aria-label={title || `Connect ${c.title}`}
+        aria-label={heading}
       >
         <div className="flex items-center gap-3 px-5 pt-5">
           <ConnectorBadge connector={c} size={34} title={c.title} />
-          <div className="flex-1 font-semibold text-[16px] tracking-tight">
-            {title || `Connect ${c.title}`}
-          </div>
-          <button className="text-faint hover:text-ink text-[18px] leading-none" onClick={onClose} title="Close">
+          <div className="flex-1 font-semibold text-[16px] tracking-tight">{heading}</div>
+          <button
+            className="text-faint hover:text-ink text-[18px] leading-none"
+            onClick={onClose}
+            title={t("Close")}
+          >
             ×
           </button>
         </div>
@@ -84,7 +89,7 @@ export function AddConnectionModal({
                     }
                     onClick={() => setPane(p)}
                   >
-                    {p === "one" ? "One click" : "Manual"}
+                    {p === "one" ? t("One click") : t("Manual")}
                   </button>
                 ))}
               </div>
@@ -128,11 +133,12 @@ export function AddConnectionModal({
 // client secret, no broker, no OpenWorker sign-in required). Poll until the card
 // flips to connected, then close.
 function McpOneClick({ c, onConnected }: { c: Connector; onConnected: () => void }) {
+  const { t } = useI18n();
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!waiting) return;
-    const t = setInterval(async () => {
+    const timer = setInterval(async () => {
       try {
         const list = await getConnectors();
         if (list.find((x) => x.name === c.name)?.connected) onConnected();
@@ -140,20 +146,21 @@ function McpOneClick({ c, onConnected }: { c: Connector; onConnected: () => void
         /* keep polling */
       }
     }, 2000);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, [waiting, c.name, onConnected]);
   const go = async () => {
     setError(null);
     const res = await connectMcpBacked(c.name);
     if (res.ok) setWaiting(true);
-    else setError(res.error || "could not start the connect");
+    else setError(res.error || t("could not start the connect"));
   };
   return (
     <div className="px-5 py-4 space-y-3">
       <p className="text-[13px] text-muted">
-        Opens {c.title} in your browser — sign in and approve access there. No tokens
-        typed, and no OpenWorker account needed: the sign-in runs entirely on this
-        computer.
+        {t(
+          "Opens {name} in your browser — sign in and approve access there. No tokens typed, and no OpenWorker account needed: the sign-in runs entirely on this computer.",
+          { name: c.title },
+        )}
       </p>
       <button
         className={PILL_ACCENT + " w-full !py-2"}
@@ -161,12 +168,14 @@ function McpOneClick({ c, onConnected }: { c: Connector; onConnected: () => void
         onClick={go}
         disabled={waiting}
       >
-        {waiting ? "Check your browser…" : `Connect ${c.title}`}
+        {waiting ? t("Check your browser…") : t("Connect {name}", { name: c.title })}
       </button>
       {error && <div className="text-[12.5px] text-danger">{error}</div>}
       <p className="text-[12px] text-faint text-center flex items-center justify-center gap-1.5">
-        <span className={TAG_ACCENT}>Recommended</span> agents get a curated set of{" "}
-        {c.title} tools · tokens stay on this computer
+        <span className={TAG_ACCENT}>{t("Recommended")}</span>{" "}
+        {t("agents get a curated set of {name} tools · tokens stay on this computer", {
+          name: c.title,
+        })}
       </p>
     </div>
   );
@@ -175,19 +184,22 @@ function McpOneClick({ c, onConnected }: { c: Connector; onConnected: () => void
 // One-click pane for generic managed connectors (Notion, Attio, …): sign in
 // with the service in the browser; each consent lands as its own account.
 function GenericOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null }) {
+  const { t } = useI18n();
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const go = async () => {
     setError(null);
     const res = await connectManaged(c.name);
     if (res.ok) setWaiting(true);
-    else setError(res.error || "could not start the connect");
+    else setError(res.error || t("could not start the connect"));
   };
   return (
     <div className="px-5 py-4 space-y-3">
       <p className="text-[13px] text-muted">
-        Opens {c.title} in your browser — approve access there. No tokens typed; connect
-        again with another account to add it alongside.
+        {t(
+          "Opens {name} in your browser — approve access there. No tokens typed; connect again with another account to add it alongside.",
+          { name: c.title },
+        )}
       </p>
       {cloud?.signed_in ? (
         <button
@@ -196,7 +208,7 @@ function GenericOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null
           onClick={go}
           disabled={waiting}
         >
-          {waiting ? "Check your browser…" : `Connect ${c.title}`}
+          {waiting ? t("Check your browser…") : t("Connect {name}", { name: c.title })}
         </button>
       ) : cloud ? (
         <CloudSignInInline />
@@ -205,30 +217,37 @@ function GenericOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null
       )}
       {error && <div className="text-[12.5px] text-danger">{error}</div>}
       <p className="text-[12px] text-faint text-center flex items-center justify-center gap-1.5">
-        <span className={TAG_ACCENT}>Recommended</span> tokens stay on this computer
+        <span className={TAG_ACCENT}>{t("Recommended")}</span> {t("tokens stay on this computer")}
       </p>
     </div>
   );
 }
 
 function SlackOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null }) {
+  const { t } = useI18n();
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const go = async () => {
     setError(null);
     const res = await connectManaged(c.name);
     if (res.ok) setWaiting(true);
-    else setError(res.error || "could not start the install");
+    else setError(res.error || t("could not start the install"));
   };
   return (
     <div className="px-5 py-4 space-y-3">
       <p className="text-[13px] text-muted">
-        Opens Slack in your browser — approve @ocw for the workspace. No tokens; works for any
-        number of workspaces.
+        {t(
+          "Opens Slack in your browser — approve @ocw for the workspace. No tokens; works for any number of workspaces.",
+        )}
       </p>
       {cloud?.signed_in ? (
-        <button className={PILL_ACCENT + " w-full !py-2"} data-testid="modal-add-to-slack" onClick={go} disabled={waiting}>
-          {waiting ? "Check your browser…" : "Add to Slack"}
+        <button
+          className={PILL_ACCENT + " w-full !py-2"}
+          data-testid="modal-add-to-slack"
+          onClick={go}
+          disabled={waiting}
+        >
+          {waiting ? t("Check your browser…") : t("Add to Slack")}
         </button>
       ) : cloud ? (
         <CloudSignInInline />
@@ -237,34 +256,41 @@ function SlackOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null }
       )}
       {error && <div className="text-[12.5px] text-danger">{error}</div>}
       <p className="text-[12px] text-faint text-center flex items-center justify-center gap-1.5">
-        <span className={TAG_ACCENT}>Recommended</span> relay · tokens stay on this computer
+        <span className={TAG_ACCENT}>{t("Recommended")}</span>{" "}
+        {t("relay · tokens stay on this computer")}
       </p>
     </div>
   );
 }
 
 function GithubOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null }) {
+  const { t } = useI18n();
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const go = async () => {
     setError(null);
     const res = await connectManaged(c.name);
     if (res.ok) setWaiting(true);
-    else setError(res.error || "could not start the install");
+    else setError(res.error || t("could not start the install"));
   };
   return (
     <div className="px-5 py-4 space-y-3">
       <p className="text-[13px] text-muted">
-        Opens GitHub in your browser — approve OpenWorker there. An existing @ocw-agent App
-        installation links right up; otherwise you'll pick an account and repos. No tokens
-        typed; the agent acts as ocw-agent[bot].
+        {t(
+          "Opens GitHub in your browser — approve OpenWorker there. An existing @ocw-agent App installation links right up; otherwise you'll pick an account and repos. No tokens typed; the agent acts as ocw-agent[bot].",
+        )}
       </p>
       {cloud?.signed_in ? (
         /* One button: the broker is authorize-first — it links an existing installation or
            redirects the same tab on to the install page (the old "Already installed? Link
            it" question and the Configure dead-end are gone). */
-        <button className={PILL_ACCENT + " w-full !py-2"} data-testid="modal-install-github-app" onClick={() => go()} disabled={waiting}>
-          {waiting ? "Check your browser…" : "Connect GitHub"}
+        <button
+          className={PILL_ACCENT + " w-full !py-2"}
+          data-testid="modal-install-github-app"
+          onClick={() => go()}
+          disabled={waiting}
+        >
+          {waiting ? t("Check your browser…") : t("Connect GitHub")}
         </button>
       ) : cloud ? (
         <CloudSignInInline />
@@ -273,13 +299,15 @@ function GithubOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null 
       )}
       {error && <div className="text-[12.5px] text-danger">{error}</div>}
       <p className="text-[12px] text-faint text-center flex items-center justify-center gap-1.5">
-        <span className={TAG_ACCENT}>Recommended</span> relay · short-lived tokens, never stored
+        <span className={TAG_ACCENT}>{t("Recommended")}</span>{" "}
+        {t("relay · short-lived tokens, never stored")}
       </p>
     </div>
   );
 }
 
 function HubSpotOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null }) {
+  const { t } = useI18n();
   const [access, setAccess] = useState<"read" | "write">("read");
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -287,19 +315,26 @@ function HubSpotOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null
     setError(null);
     const res = await connectManaged(c.name, { access });
     if (res.ok) setWaiting(true);
-    else setError(res.error || "could not start the connect");
+    else setError(res.error || t("could not start the connect"));
   };
   return (
     <div className="px-5 py-4 space-y-3">
       <p className="text-[13px] text-muted">
-        Opens HubSpot in your browser — pick the portal there. What agents may do is chosen
-        NOW, at consent:
+        {t("Opens HubSpot in your browser — pick the portal there. What agents may do is chosen NOW, at consent:")}
       </p>
       <div className="space-y-1.5" data-testid="hubspot-access">
         {(
           [
-            ["read", "Read-only", "search and read contacts, companies, deals, tickets"],
-            ["write", "Read & write", "adds: log notes and tasks, update records, create contacts — never delete"],
+            [
+              "read",
+              t("Read-only"),
+              t("search and read contacts, companies, deals, tickets"),
+            ],
+            [
+              "write",
+              t("Read & write"),
+              t("adds: log notes and tasks, update records, create contacts — never delete"),
+            ],
           ] as const
         ).map(([value, label, blurb]) => (
           <label key={value} className="flex items-start gap-2 text-[13px] cursor-pointer">
@@ -319,8 +354,13 @@ function HubSpotOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null
         ))}
       </div>
       {cloud?.signed_in ? (
-        <button className={PILL_ACCENT + " w-full !py-2"} data-testid="modal-connect-hubspot" onClick={go} disabled={waiting}>
-          {waiting ? "Check your browser…" : "Connect HubSpot"}
+        <button
+          className={PILL_ACCENT + " w-full !py-2"}
+          data-testid="modal-connect-hubspot"
+          onClick={go}
+          disabled={waiting}
+        >
+          {waiting ? t("Check your browser…") : t("Connect HubSpot")}
         </button>
       ) : cloud ? (
         <CloudSignInInline />
@@ -329,13 +369,14 @@ function HubSpotOneClick({ c, cloud }: { c: Connector; cloud: CloudStatus | null
       )}
       {error && <div className="text-[12.5px] text-danger">{error}</div>}
       <p className="text-[12px] text-faint text-center">
-        Works for any number of portals · tokens stay on this computer
+        {t("Works for any number of portals · tokens stay on this computer")}
       </p>
     </div>
   );
 }
 
 function SlackManual({ onConnected }: { onConnected: () => void }) {
+  const { t } = useI18n();
   const [bot, setBot] = useState("");
   const [app, setApp] = useState("");
   const [busy, setBusy] = useState(false);
@@ -346,23 +387,41 @@ function SlackManual({ onConnected }: { onConnected: () => void }) {
     const res = await connectConnector("slack", { bot_token: bot.trim(), app_token: app.trim() });
     setBusy(false);
     if (res.ok) onConnected();
-    else setError(res.error || "could not connect");
+    else setError(res.error || t("could not connect"));
   };
   return (
     <div className="px-5 py-4 space-y-3">
       <ol className="list-decimal pl-4 text-[13px] text-muted space-y-1">
-        <li>Create an app at api.slack.com/apps</li>
-        <li>Enable Socket Mode, add bot scopes, install it to your workspace</li>
-        <li>Paste both tokens</li>
+        <li>{t("Create an app at api.slack.com/apps")}</li>
+        <li>{t("Enable Socket Mode, add bot scopes, install it to your workspace")}</li>
+        <li>{t("Paste both tokens")}</li>
       </ol>
-      <input className={INPUT} type="password" placeholder="Bot token · xoxb-…" value={bot} spellCheck={false} onChange={(e) => setBot(e.target.value)} />
-      <input className={INPUT} type="password" placeholder="App token · xapp-…" value={app} spellCheck={false} onChange={(e) => setApp(e.target.value)} />
-      <button className={PILL_LINE + " w-full !py-2"} onClick={submit} disabled={busy || !bot.trim() || !app.trim()}>
-        {busy ? "Validating…" : "Connect"}
+      <input
+        className={INPUT}
+        type="password"
+        placeholder={t("Bot token · xoxb-…")}
+        value={bot}
+        spellCheck={false}
+        onChange={(e) => setBot(e.target.value)}
+      />
+      <input
+        className={INPUT}
+        type="password"
+        placeholder={t("App token · xapp-…")}
+        value={app}
+        spellCheck={false}
+        onChange={(e) => setApp(e.target.value)}
+      />
+      <button
+        className={PILL_LINE + " w-full !py-2"}
+        onClick={submit}
+        disabled={busy || !bot.trim() || !app.trim()}
+      >
+        {busy ? t("Validating…") : t("Connect")}
       </button>
       {error && <div className="text-[12.5px] text-danger">{error}</div>}
       <p className="text-[12px] text-warnInk text-center">
-        One mode at a time — this pauses any relay workspaces.
+        {t("One mode at a time — this pauses any relay workspaces.")}
       </p>
     </div>
   );

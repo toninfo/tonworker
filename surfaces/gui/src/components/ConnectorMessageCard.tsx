@@ -15,6 +15,8 @@
 
 import { useState, type CSSProperties } from "react";
 import type { MessageSource } from "../api";
+import { t as translate } from "../i18n";
+import { useI18n } from "../i18n/react";
 import { ConnectorBadge, hexToRgba, NEUTRAL } from "../connectors/ConnectorIcon";
 import { resolveConnector } from "../connectors/registry";
 
@@ -23,14 +25,14 @@ function relativeTime(tsSeconds: number): string {
   if (!tsSeconds || !isFinite(tsSeconds)) return "";
   const then = tsSeconds * 1000;
   const diff = Date.now() - then;
-  if (diff < 0) return "just now";
-  if (diff < 45_000) return "just now";
+  if (diff < 0) return translate("just now");
+  if (diff < 45_000) return translate("just now");
   const mins = Math.round(diff / 60_000);
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 60) return translate("{n}m ago", { n: mins });
   const hrs = Math.round(diff / 3_600_000);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return translate("{n}h ago", { n: hrs });
   const days = Math.round(diff / 86_400_000);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return translate("{n}d ago", { n: days });
   return new Date(then).toLocaleDateString();
 }
 
@@ -47,6 +49,7 @@ export function ConnectorMessageCard({
   source: MessageSource;
   brandColor?: string;
 }) {
+  const { t } = useI18n();
   const [showIds, setShowIds] = useState(false);
   const { key, entry } = resolveConnector(source.connector);
   const color = (brandColor || "").trim() || NEUTRAL;
@@ -85,7 +88,7 @@ export function ConnectorMessageCard({
             </span>
             <span className="text-faint">·</span>
             <span className="text-[12.5px] font-medium">{source.sender_name}</span>
-            <span className="text-[11px] text-faint ml-0.5">via {entry.label}</span>
+            <span className="text-[11px] text-faint ml-0.5">{t("via {label}", { label: entry.label })}</span>
           </>
         )}
         <time className="ml-auto text-[11px] text-faint whitespace-nowrap" title={clockTime(source.ts)}>

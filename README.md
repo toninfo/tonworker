@@ -1,131 +1,134 @@
 <p align="center">
 <details>
-<summary><b>🌐 Language / 语言: English ▾</b></summary>
+<summary><b>🌐 语言 / Language: 简体中文 ▾</b></summary>
 
-- [English](README.md)
-- [简体中文](README.zh-CN.md)
+- [简体中文](README.md)（默认）
+- [English](README.en.md)
 
 </details>
 </p>
 
 # OpenWorker
 
-**[openworker.com](https://openworker.com)** · [Download](#download) · [Issues](https://github.com/andrewyng/openworker/issues)
+**[openworker.com](https://openworker.com)** · [下载](#下载) · [Issues](https://github.com/andrewyng/openworker/issues)
 
 <a href="https://trendshift.io/repositories/91434?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-91434" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/91434/daily?language=Python" alt="andrewyng%2Fopenworker | Trendshift" width="250" height="55"/></a>
 
-> **Beta** - OpenWorker is in open beta: fully usable, updates itself, and we're actively polishing rough edges. [Issues](https://github.com/andrewyng/openworker/issues) welcome.
+> **Beta** — OpenWorker 目前处于公开测试阶段：功能完整可用、可自动更新，我们正在积极打磨细节。[Issues](https://github.com/andrewyng/openworker/issues) 欢迎反馈。
 
-**AI that gets your everyday tasks done.** OpenWorker is an open-source AI coworker that lives on your desktop and delivers **finished work**, not just chat: a polished document, a Slack reply with the numbers, an updated calendar, a triaged inbox.
+**帮你搞定日常事务的 AI。** OpenWorker 是一款开源 AI 同事，常驻你的桌面，交付的是**完成的工作成果**，而不只是对话：一份精修过的文档、一条带数据的 Slack 回复、一条已更新的日历日程、一个已分诊的收件箱。
 
-It runs on your machine and doesn't lock you into any model: bring your own API key for OpenAI, Anthropic, Google, or an open-weight provider, or run fully local with Ollama. Your data leaves your machine only through the model and integrations *you* choose.
+它运行在你自己的机器上，不绑定任何模型：自带 OpenAI、Anthropic、Google 或开源权重提供商的 API key，或者用 Ollama 完全本地运行。你的数据只通过*你选择*的模型和集成离开你的机器。
 
-[![How OpenWorker works](docs/assets/how-it-works.png)](https://openworker.com)
+[![OpenWorker 工作原理](docs/assets/how-it-works.png)](https://openworker.com)
 
-## Download
+## 下载
 
-[**⬇ macOS (Apple Silicon)**](https://download.openworker.com/mac)
-<sub>macOS 12+ · signed & notarized · auto-updates</sub>
+[**⬇ macOS（Apple Silicon）**](https://download.openworker.com/mac)
+<sub>macOS 12+ · 已签名并公证 · 自动更新</sub>
 
 [**⬇ Windows 10/11 (x64)**](https://download.openworker.com/windows)
-<sub>builds are not yet code-signed, so SmartScreen will warn; signing is in progress</sub>
+<sub>构建包尚未代码签名，SmartScreen 会弹出警告；签名工作正在进行中</sub>
 
-Open the app, add a model key (or point it at Ollama), and ask for something real.
+打开应用，添加模型 key（或指向 Ollama），然后提出一个真实需求。
 
-## How it works
+## 工作原理
 
-1. Tell OpenWorker the outcome you want - "prepare a customer brief," "untangle my calendar," "draft a report," "check where the release stands across Jira and GitHub."
-2. It breaks the task into steps and works across your desktop, files, and connected apps.
-3. Before anything consequential - sending a message, changing a calendar, running a command - it checks in and you approve or redirect.
-4. You get the finished deliverable, not a to-do list.
+1. 告诉 OpenWorker 你想要的结果——「准备一份客户简报」「理清我的日历」「起草一份报告」「检查发布在 Jira 和 GitHub 上的进展」。
+2. 它会将任务拆解为步骤，在你的桌面、文件和已连接的应用之间协同完成。
+3. 在做出任何有影响的动作之前——发送消息、修改日历、运行命令——它会先征询你的意见，由你批准或调整。
+4. 你拿到的是完成的交付物，而不是一张待办清单。
 
-Under the hood:
+底层架构：
 
 ```text
 ┌────────────────────────────────────────────────┐
-│              OpenWorker desktop app            │  native shell + GUI
+│              OpenWorker desktop app            │  原生外壳 + GUI
 ├────────────────────────────────────────────────┤
-│           local agent server (Python)          │  engine · tools · connectors - built on aisuite
+│           local agent server (Python)          │  引擎 · 工具 · 连接器 — 基于 aisuite
 ├───────────────┬────────────────┬───────────────┤
-│  your files   │   your tools   │  your model   │  everything runs with your keys,
-│  & terminal   │ 25+ connectors │  any provider │  on your machine
+│  your files   │   your tools   │  your model   │  一切使用你的 key，
+│  & terminal   │ 25+ connectors │  any provider │  运行在你的机器上
 └───────────────┴────────────────┴───────────────┘
 ```
 
-## What it can do
+## 它能做什么
 
-- **Produce real deliverables** - documents, spreadsheets, reports, and web pages land as files you can open and share.
-- **Work from Slack** - mention `@OpenWorker` in a channel; a session opens on your desktop, the work happens with your tools, and the answer comes back as a thread reply.
-- **Use your everyday tools** - 25+ integrations including GitHub, Slack, Jira, Notion, Linear, HubSpot, Outlook, monday.com, Gmail, and Google Calendar, plus your **terminal and local files**. Any tool reachable over [MCP](https://modelcontextprotocol.io/) plugs in too, with per-tool control.
-- **Run on a schedule** - automations for recurring work: a morning brief, a weekly report, a standing watch over a channel. Runs land in the app with full transcripts.
-- **Ask before acting** - writes, sends, and shell commands are approval-gated. Unattended runs park their asks in an inbox instead of acting on their own.
+- **产出真实的交付物** — 文档、电子表格、报告和网页以文件形式落地，你可以打开、分享。
+- **从 Slack 使用** — 在频道里提及 `@OpenWorker`，桌面上会开启会话，用你的工具完成工作，答案以主题回复返回。
+- **使用你的日常工具** — 25+ 集成，包括 GitHub、Slack、Jira、Notion、Linear、HubSpot、Outlook、monday.com、Gmail 和 Google Calendar，外加你的**终端和本地文件**。任何可通过 [MCP](https://modelcontextprotocol.io/) 触达的工具也能接入，并支持按工具控制权限。
+- **按计划运行** — 为重复性工作设置自动化：晨间简报、周报、对某个频道的持续监控。每次运行都会以完整记录落在应用中。
+- **行动前先征询** — 写入、发送和 shell 命令都需要审批。无人值守的运行会把待办事项放进收件箱，而不是自行行动。
 
-## Bring your own model
+## 自带模型
 
-Model access is yours: pick a provider, paste your key, switch anytime. Supported out of the box:
+模型访问权属于你：选择提供商、粘贴 key、随时切换。开箱即支持：
 
-**OpenAI · Anthropic · Google Gemini · Inkling (Thinking Machines) · GLM (Z.ai) · DeepSeek · Kimi (Moonshot) · Qwen · MiniMax · Mistral · Grok (xAI)** - plus open-weight models via **Together** and **Fireworks**, and fully local models via **Ollama**.
+**OpenAI · Anthropic · Google Gemini · Inkling (Thinking Machines) · GLM (Z.ai) · DeepSeek · Kimi (Moonshot) · Qwen · MiniMax · Mistral · Grok (xAI)** — 以及通过 **Together** 和 **Fireworks** 使用的开源权重模型，还有通过 **Ollama** 完全本地运行的模型。
 
-A curated model list marks what we've verified for tool-calling work. Adding any model string works at your own risk.
+精选模型列表会标注我们已针对工具调用场景验证过的模型。添加任意模型字符串，后果自负。
 
-## Privacy
+## 隐私
 
-OpenWorker is local-first. Everything lives on your machine: the agent loop, your conversations, connector tokens, and model keys - all in the app's local secret store. The only cloud piece is a small service that brokers OAuth handshakes for connectors. You can always use the App without signing-in - use the connectors via manually-created credentials/API-keys.
+OpenWorker 是本地优先的。一切都在你的机器上：智能体循环、你的对话、连接器令牌和模型 key — 全部存放在应用的本地密钥存储中。唯一的云端组件是一个为连接器协调 OAuth 握手的小型服务。你完全可以不登录使用应用 — 通过手动创建的凭据 / API key 使用连接器。
 
-## Run from source
+## 从源码运行
 
-Prerequisites: Python 3.10+, Node 20+, and (for the desktop shell) the Rust toolchain via [rustup](https://rustup.rs/).
+前置条件：Python 3.10+、Node 20+，以及（桌面外壳需要）Rust 工具链（通过 [rustup](https://rustup.rs/) 安装）。
+
+> **说明：** `tomllib` 需要 Python 3.11+。若本机默认是 3.10，请用 3.12 创建 venv，例如：  
+> `/usr/bin/python3.12 -m venv .venv`，再执行下文的 `pip install` / 引导脚本。
 
 ```shell
 git clone https://github.com/andrewyng/openworker
 cd openworker
 
-# 1. One-time bootstrap - creates the Python venv at .venv
-#    (on Windows, run from Git Bash or WSL)
+# 1. 一次性引导 — 在 .venv 创建 Python 虚拟环境
+#    （Windows 上请从 Git Bash 或 WSL 运行）
 bash packaging/setup_dev_env.sh
 
-# 2. Start the local agent server
+# 2. 启动本地 agent 服务
 .venv/bin/openworker-server --cwd ~/some/project --port 8765
-#    (Windows: .venv\Scripts\openworker-server.exe)
+#    （Windows: .venv\Scripts\openworker-server.exe）
 
-# 3. In a second terminal, start the UI
+# 3. 另开一个终端，启动 UI
 cd surfaces/gui
 npm install
-npm run dev        # browser UI on the Vite dev port
+npm run dev        # 浏览器 UI，运行在 Vite 开发端口
 ```
 
-The standalone server creates a per-launch token at
-`<state-dir>/sidecar-8765.token`; Vite reads that user-only file when it starts.
-For direct API calls, send its value in the `X-OpenWorker-Token` header. The
-desktop app uses an in-memory launch token instead and never writes it to disk.
+独立服务器会在启动时于
+`<state-dir>/sidecar-8765.token` 生成一次性令牌；Vite 启动时会读取这个仅当前用户可读的文件。
+直接调用 API 时，请将该值放入 `X-OpenWorker-Token` 请求头。桌面应用
+使用内存中的启动令牌，从不写入磁盘。
 
-To run the full desktop app instead of the browser UI, replace step 3 with `npm run tauri dev` (from `surfaces/gui/`) - the Tauri shell launches the window and supervises the server itself.
+如果想运行完整桌面应用而不是浏览器 UI，把第 3 步换成 `npm run tauri dev`（在 `surfaces/gui/` 下执行）— Tauri 外壳会启动窗口并自行监管服务器。
 
-Tests: `.venv/bin/pytest` (server), `npm test` and `npm run e2e` in `surfaces/gui` (GUI unit + hermetic end-to-end). Desktop bundles are built with `packaging/build_dmg.sh` / `packaging/build_windows.ps1`.
+测试：`.venv/bin/pytest`（后端）、`surfaces/gui` 下的 `npm test` 和 `npm run e2e`（GUI 单元测试 + 封闭式端到端测试）。桌面安装包通过 `packaging/build_dmg.sh` / `packaging/build_windows.ps1` 构建。
 
-## Repository layout
+## 仓库结构
 
-| Directory | What's in it |
+| 目录 | 内容 |
 |---|---|
-| `coworker/` | Python backend - agent engine, model providers, connectors, MCP client, memory, automations |
-| `surfaces/gui/` | Desktop app - React UI + Tauri shell that supervises the server |
-| `stt/` | Speech-to-text sidecar (Rust) for voice input |
-| `packaging/` | Installer builds (macOS DMG, Windows), auto-update manifest, dev bootstrap |
-| `docs/` | Design specs and decision logs |
-| `tests/` | Backend test suite |
+| `coworker/` | Python 后端 — 智能体引擎、模型提供商、连接器、MCP 客户端、记忆、自动化 |
+| `surfaces/gui/` | 桌面应用 — React UI + 负责监管服务器的 Tauri 外壳 |
+| `stt/` | 语音输入的语音转文字旁路组件（Rust） |
+| `packaging/` | 安装包构建（macOS DMG、Windows）、自动更新清单、开发引导 |
+| `docs/` | 设计规格与决策记录 |
+| `tests/` | 后端测试套件 |
 
-## Built on aisuite
+## 基于 aisuite 构建
 
-OpenWorker's engine is built on [**aisuite**](https://github.com/andrewyng/aisuite), a lightweight Python library providing a unified chat-completions API across LLM providers and an agents layer with tools, toolkits, and MCP support. If you want to build your own agent harness rather than use ours, start there; this repo is a working reference for what aisuite can carry.
+OpenWorker 的引擎构建于 [**aisuite**](https://github.com/andrewyng/aisuite) 之上，这是一个轻量级 Python 库，为各家 LLM 提供商提供统一的 chat-completions API，并带有支持工具、工具包和 MCP 的 agents 层。如果你想构建自己的 agent 框架而不是使用我们的，可以从那里开始；本仓库正是 aisuite 能力的活参考。
 
-OpenWorker was originally developed inside the aisuite repository before moving to its own home here; thanks to the aisuite contributors whose work it builds on.
+OpenWorker 最初在 aisuite 仓库内开发，后来才迁到现在的独立仓库；感谢 aisuite 贡献者们的成果，OpenWorker 正是基于它们构建的。
 
-## Contributing
+## 参与贡献
 
-Contributions and bug reports are welcome - open an [issue](https://github.com/andrewyng/openworker/issues) or a pull request. The app updates itself, so fixes reach installs quickly.
-For any PR, please attach screenshots of what was broken and how it is fixed now. We will shortly add features that you can contribute to.
-Please note that we are actively developing based off a internal list and goal, so we may not approve PRs that add features that are already under-development or deviates from our vision.
+欢迎提交贡献和 bug 报告 — 开一个 [issue](https://github.com/andrewyng/openworker/issues) 或 pull request。应用会自动更新，因此修复能很快到达用户手中。
+提交 PR 时，请附上「修复前损坏状态」和「修复后效果」的截图。我们很快会添加可供你贡献的功能。
+请注意，我们是根据内部列表和目标积极开发的，因此可能不会批准那些添加已在开发中功能、或偏离我们愿景的 PR。
 
-## License
+## 许可证
 
-MIT - see [LICENSE](LICENSE).
+MIT — 参见 [LICENSE](LICENSE)。

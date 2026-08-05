@@ -721,10 +721,10 @@ pub fn run() {
                 }
             });
 
-            // 3. System tray: Open / Settings / Quit.
-            let open_i = MenuItem::with_id(app, "open", "Open OpenWorker", true, None::<&str>)?;
-            let settings_i = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
-            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            // 3. System tray: 打开 / 设置 / 退出（桌面壳文案直接中文）。
+            let open_i = MenuItem::with_id(app, "open", "打开 OpenWorker", true, None::<&str>)?;
+            let settings_i = MenuItem::with_id(app, "settings", "设置", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open_i, &settings_i, &quit_i])?;
 
             // A monochrome template icon (black + alpha, raw RGBA 44×44) so the menu bar tints

@@ -1598,6 +1598,8 @@ export async function mockApi(page: import("@playwright/test").Page) {
 // A `test` whose page has the API mocked before navigation.
 export const test = base.extend({
   page: async ({ page }, use) => {
+    // E2E 断言英文文案；锁定 en，避免默认中文界面导致选择器失败
+    await page.addInitScript(() => localStorage.setItem("openworker.locale", "en"));
     await mockApi(page);
     await use(page);
   },
