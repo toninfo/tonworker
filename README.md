@@ -1,3 +1,13 @@
+<p align="center">
+<details>
+<summary><b>🌐 Language / 语言: English ▾</b></summary>
+
+- [English](README.md)
+- [简体中文](README.zh-CN.md)
+
+</details>
+</p>
+
 # OpenWorker
 
 **[openworker.com](https://openworker.com)** · [Download](#download) · [Issues](https://github.com/andrewyng/openworker/issues)
