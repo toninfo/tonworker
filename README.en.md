@@ -24,11 +24,18 @@ It runs on your machine and doesn't lock you into any model: bring your own API 
 
 ## Download
 
-[**⬇ macOS (Apple Silicon)**](https://download.openworker.com/mac)
-<sub>macOS 12+ · signed & notarized · auto-updates</sub>
+Builds from this fork ([toninfo/openworker](https://github.com/toninfo/openworker)); Chinese UI by default:
 
-[**⬇ Windows 10/11 (x64)**](https://download.openworker.com/windows)
-<sub>builds are not yet code-signed, so SmartScreen will warn; signing is in progress</sub>
+[**⬇ macOS (Apple Silicon)**](https://github.com/toninfo/openworker/releases/latest/download/OpenWorker-macos-arm64.dmg)
+<sub>macOS 12+ · Release artifacts from this fork</sub>
+
+[**⬇ macOS (Intel)**](https://github.com/toninfo/openworker/releases/latest/download/OpenWorker-macos-x64.dmg)
+<sub>macOS 12+ · Intel / x86_64</sub>
+
+[**⬇ Windows 10/11 (x64)**](https://github.com/toninfo/openworker/releases/latest/download/OpenWorker-windows-setup.exe)
+<sub>SmartScreen may warn when the build is not Authenticode-signed</sub>
+
+See all assets (including `.msi`) on the [Releases](https://github.com/toninfo/openworker/releases) page.
 
 Open the app, add a model key (or point it at Ollama), and ask for something real.
 

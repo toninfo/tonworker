@@ -24,11 +24,18 @@
 
 ## 下载
 
-[**⬇ macOS（Apple Silicon）**](https://download.openworker.com/mac)
-<sub>macOS 12+ · 已签名并公证 · 自动更新</sub>
+本仓库（[toninfo/openworker](https://github.com/toninfo/openworker)）发布的构建包，默认中文界面：
 
-[**⬇ Windows 10/11 (x64)**](https://download.openworker.com/windows)
-<sub>构建包尚未代码签名，SmartScreen 会弹出警告；签名工作正在进行中</sub>
+[**⬇ macOS（Apple Silicon）**](https://github.com/toninfo/openworker/releases/latest/download/OpenWorker-macos-arm64.dmg)
+<sub>macOS 12+ · 来自本 fork 的 Release 构建</sub>
+
+[**⬇ macOS（Intel）**](https://github.com/toninfo/openworker/releases/latest/download/OpenWorker-macos-x64.dmg)
+<sub>macOS 12+ · Intel / x86_64</sub>
+
+[**⬇ Windows 10/11 (x64)**](https://github.com/toninfo/openworker/releases/latest/download/OpenWorker-windows-setup.exe)
+<sub>未做 Authenticode 签名时 SmartScreen 可能警告</sub>
+
+也可在 [Releases](https://github.com/toninfo/openworker/releases) 页查看全部资产（含 `.msi`）。
 
 打开应用，添加模型 key（或指向 Ollama），然后提出一个真实需求。
 
