@@ -419,7 +419,11 @@ async def test_blocked_run_does_not_stall_other_tasks(tmp_path):
     assert store.get(quick.id).run_count == 1
     assert store.get(blocked.id).run_count == 0
     gate.set()
-    await asyncio.sleep(0.1)
+    # 等 blocked 完成并写回 next_run；随后立刻 stop，避免再等一整拍 tick。
+    for _ in range(50):
+        if store.get(blocked.id).run_count >= 1:
+            break
+        await asyncio.sleep(0.02)
     assert store.get(blocked.id).run_count == 1
     await sched.stop()
 
