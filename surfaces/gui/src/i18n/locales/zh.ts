@@ -470,7 +470,8 @@ export const zh: Record<string, string> = {
   "Max pages": "最大页数",
   "Max size": "最大体积",
   MB: "MB",
-  Memory: "内存",
+  Memory: "记忆",
+  "System memory": "系统内存",
   "Microphone test": "麦克风测试",
   Models: "模型",
   "Models can be enabled or hidden anytime in Settings ▸ Models.": "可随时在 设置 ▸ 模型 中启用或隐藏模型。",
@@ -1175,6 +1176,45 @@ export const zh: Record<string, string> = {
   "the channel": "该频道",
   "without asking each time. Anything else still asks first.": "而无需每次询问。其他操作仍会先征求确认。",
   "{title} · {time} run": "{title} · {time} 次运行",
+
+  // ── upstream sync: Memory V1 + ask_user OPE-51 ──
+  Undo: "撤销",
+  "Previous question": "上一题",
+  "Question {n}": "问题 {n}",
+  question: "提问",
+  "{current} of {total}": "{current} / {total}",
+  "Okay — put back the way it was.": "好的 — 已恢复原样。",
+  "Okay — forgotten.": "好的 — 已忘记。",
+  "I've updated what I remember": "我已更新记住的内容",
+  "I'll remember that": "我会记住这件事",
+  "Details you share from future conversations will be remembered, so I can be more helpful over time.":
+    "之后对话里你分享的细节会被记住，这样我能越帮越到位。",
+  "I'll stop remembering new things about you. What I already know is kept and still used — delete anything below you'd rather I forget.":
+    "我不会再记住关于你的新内容。已有记忆仍会保留并继续使用 — 想忘掉的请在下方删除。",
+  "Delete everything that's been remembered about you?\n\nThis can't be undone. Conversations you already have open still know what they knew — new conversations start with a clean slate.":
+    "删除所有关于你的记忆？\n\n此操作无法撤销。已打开的对话仍保留它们开始时知道的内容 — 新对话会从空白开始。",
+  "Everything I remembered has been deleted. New conversations start fresh; ones you already have open still know what they knew when they started.":
+    "我记住的一切都已删除。新对话从空白开始；已打开的对话仍保留它们开始时知道的内容。",
+  "Your coworkers can remember useful things about you between conversations. Everything they know is listed here.":
+    "同事可以在对话之间记住对你有用的事。它们知道的一切都列在这里。",
+  "Remember new things about you": "记住关于你的新内容",
+  "Remember new things about me": "记住关于我的新内容",
+  "Lasting preferences you mention in chat get saved and used in future conversations — you'll see a small note each time, with one-tap Undo. Turning this off stops new saves; anything already below is still used until you delete it.":
+    "你在聊天里提到的长期偏好会被保存，并用于之后的对话 — 每次都会有一条小提示，可一键撤销。关闭后不再新增；下方已有内容在你删除前仍会继续使用。",
+  "What I've learned about you": "我学到的关于你的事",
+  "Forget everything…": "全部忘记…",
+  "Saved automatically from your conversations. Fix anything that's wrong — or delete it. Edits and deletions apply to new conversations; ones you already have open keep what they knew when they started.":
+    "从你的对话中自动保存。有误就改正 — 或者删除。编辑与删除对新对话生效；已打开的对话仍保留它们开始时知道的内容。",
+  'Nothing yet. When you mention a lasting preference in chat — or say "remember that…" — it will show up here.':
+    "还没有内容。当你在聊天里提到长期偏好 — 或说「记住这件事…」— 就会出现在这里。",
+  "Your instructions": "你的指令",
+  "Your coworkers follow these in every conversation.": "同事在每次对话中都会遵循这些指令。",
+  "I use a screen reader — no tables, describe any image\nUse DD-MM-YYYY for dates":
+    "我使用读屏软件 — 不要用表格，描述所有图片\n日期使用 DD-MM-YYYY",
+  "Saved — applies to new conversations. Ones you already have open keep the instructions they started with.":
+    "已保存 — 对新对话生效。已打开的对话仍保留它们开始时的指令。",
+  "Fix this": "修正",
+  "Delete this memory": "删除这条记忆",
 
   // ── batch: App / Quickstart / ManageTabs leftovers ──
   "Channel where an Unattended session posts Approve/Deny buttons. Currently mirroring to": "无人值守会话发布批准/拒绝按钮的频道。当前镜像到",
