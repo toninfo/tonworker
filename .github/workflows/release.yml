@@ -1,8 +1,8 @@
-# Desktop release builds — macOS (.dmg, arm64 + Intel) and Windows (.msi + NSIS .exe).
+# Desktop release builds — macOS (.dmg), Windows (.msi + NSIS .exe), Linux (.AppImage + .deb).
 #
-# CI calls the SAME scripts developers run locally (packaging/build_dmg.sh and
-# build_windows.ps1); this file only provisions the toolchain (Node, Rust, a Python venv at
-# .venv with PyInstaller) and publishes the results.
+# CI calls the SAME scripts developers run locally (packaging/build_dmg.sh,
+# build_windows.ps1, build_linux.sh); this file only provisions the toolchain (Node, Rust,
+# a Python venv at .venv with PyInstaller) and publishes the results.
 #
 # Triggers:
 #   - tag push `v*`  → builds all targets and attaches them to a DRAFT GitHub Release
@@ -25,6 +25,8 @@
 #   APPLE_API_ISSUER             the API issuer id
 # When the secrets are absent (forks, scratch runs) the build degrades to unsigned —
 # installable via `xattr -cr`. Windows remains unsigned (Authenticode is a later step).
+# Linux AppImage may need APPIMAGE_EXTRACT_AND_RUN on FUSE-less runners (handled in
+# packaging/build_linux.sh); .deb is the reliable fallback.
 
 name: Release
 
@@ -52,6 +54,9 @@ jobs:
             slug: macos-x64
           - os: windows-latest
             slug: windows
+          # jammy: WebKitGTK 4.1 + fewer AppImage/FUSE surprises than ubuntu-latest (noble).
+          - os: ubuntu-22.04
+            slug: linux-x86_64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -71,6 +76,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install Linux WebKitGTK / Tauri deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential curl wget file \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev patchelf libssl-dev \
+            libfuse2 squashfs-tools
 
       - name: Set up the sidecar venv (.venv)
         # The build scripts expect a venv at .venv with the package + PyInstaller.
@@ -122,6 +137,15 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: ./packaging/build_windows.ps1
 
+      - name: Build .AppImage + .deb (Linux)
+        if: runner.os == 'Linux'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          NO_STRIP: "true"
+        run: bash packaging/build_linux.sh
+
       - name: Stage artifacts (versioned + stable names)
         run: |
           mkdir -p out
@@ -135,6 +159,22 @@ jobs:
             # secret is configured). The .sig signs CONTENT, so the stable rename is safe.
             SIG=$(ls "$BUNDLE"/nsis/*.exe.sig 2>/dev/null | head -1 || true)
             [ -n "$SIG" ] && cp "$SIG" out/TonWorker-windows-setup.exe.sig
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            if ls "$BUNDLE"/appimage/*.AppImage >/dev/null 2>&1; then
+              cp "$BUNDLE"/appimage/*.AppImage out/
+              cp "$BUNDLE"/appimage/*.AppImage out/TonWorker-linux-x86_64.AppImage
+              SIG=$(ls "$BUNDLE"/appimage/*.AppImage.sig 2>/dev/null | head -1 || true)
+              [ -n "$SIG" ] && cp "$SIG" out/TonWorker-linux-x86_64.AppImage.sig
+            fi
+            if ls "$BUNDLE"/deb/*.deb >/dev/null 2>&1; then
+              cp "$BUNDLE"/deb/*.deb out/
+              cp "$BUNDLE"/deb/*.deb out/TonWorker-linux-x86_64.deb
+            fi
+            # At least one Linux installer must exist
+            if [ -z "$(find out -maxdepth 1 \( -name '*.AppImage' -o -name '*.deb' \) -print -quit)" ]; then
+              echo "ERROR: no Linux artifacts staged"
+              exit 1
+            fi
           else
             cp "$BUNDLE"/dmg/*.dmg out/
             cp "$BUNDLE"/dmg/*.dmg out/TonWorker-${{ matrix.slug }}.dmg

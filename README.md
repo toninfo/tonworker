@@ -31,7 +31,10 @@
 [**⬇ Windows 10/11 (x64)**](https://github.com/toninfo/tonworker/releases/latest/download/TonWorker-windows-setup.exe)
 <sub>未做 Authenticode 签名时 SmartScreen 可能警告</sub>
 
-也可在 [Releases](https://github.com/toninfo/tonworker/releases) 页查看全部资产（含 `.msi`）。
+[**⬇ Linux（AppImage x86_64）**](https://github.com/toninfo/tonworker/releases/latest/download/TonWorker-linux-x86_64.AppImage)
+<sub>chmod +x 后直接运行；同页另有 `.deb`</sub>
+
+也可在 [Releases](https://github.com/toninfo/tonworker/releases) 页查看全部资产（含 `.msi` / `.deb`）。
 
 打开应用，添加模型 key（或指向 Ollama），然后提出一个真实需求。
 

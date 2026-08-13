@@ -31,7 +31,10 @@ Builds from this fork ([toninfo/tonworker](https://github.com/toninfo/tonworker)
 [**⬇ Windows 10/11 (x64)**](https://github.com/toninfo/tonworker/releases/latest/download/TonWorker-windows-setup.exe)
 <sub>SmartScreen may warn when the build is not Authenticode-signed</sub>
 
-See all assets (including `.msi`) on the [Releases](https://github.com/toninfo/tonworker/releases) page.
+[**⬇ Linux (AppImage x86_64)**](https://github.com/toninfo/tonworker/releases/latest/download/TonWorker-linux-x86_64.AppImage)
+<sub>chmod +x then run; `.deb` is also on the Releases page</sub>
+
+See all assets (including `.msi` / `.deb`) on the [Releases](https://github.com/toninfo/tonworker/releases) page.
 
 Open the app, add a model key (or point it at Ollama), and ask for something real.
 
