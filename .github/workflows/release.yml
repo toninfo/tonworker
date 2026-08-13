@@ -85,6 +85,7 @@ jobs:
             build-essential curl wget file \
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev patchelf libssl-dev \
+            libasound2-dev \
             libfuse2 squashfs-tools
 
       - name: Set up the sidecar venv (.venv)
@@ -176,12 +177,21 @@ jobs:
               exit 1
             fi
           else
+            # Prefer custom hdiutil DMG from packaging/build_dmg.sh; list dir on miss for CI debug.
+            if ! ls "$BUNDLE"/dmg/*.dmg >/dev/null 2>&1; then
+              echo "ERROR: no DMG under $BUNDLE/dmg — contents:"
+              ls -la "$BUNDLE" || true
+              ls -la "$BUNDLE"/dmg || true
+              exit 1
+            fi
             cp "$BUNDLE"/dmg/*.dmg out/
             cp "$BUNDLE"/dmg/*.dmg out/TonWorker-${{ matrix.slug }}.dmg
             # macOS updater artifact: the signed .app tarball the installed app swaps in.
             if [ -f "$BUNDLE"/macos/TonWorker.app.tar.gz ]; then
               cp "$BUNDLE"/macos/TonWorker.app.tar.gz out/TonWorker-${{ matrix.slug }}.app.tar.gz
-              cp "$BUNDLE"/macos/TonWorker.app.tar.gz.sig out/TonWorker-${{ matrix.slug }}.app.tar.gz.sig
+              # .sig only when TAURI_SIGNING_PRIVATE_KEY is configured
+              [ -f "$BUNDLE"/macos/TonWorker.app.tar.gz.sig ] \
+                && cp "$BUNDLE"/macos/TonWorker.app.tar.gz.sig out/TonWorker-${{ matrix.slug }}.app.tar.gz.sig
             fi
           fi
           ls -la out
