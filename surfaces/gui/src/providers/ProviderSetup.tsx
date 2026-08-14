@@ -486,7 +486,7 @@ export function ProviderForm({
                 <span className="text-[11.5px] text-faint">{t("Runs one read-only check, then saves.")}</span>
               )}
               <button
-                className="shrink-0 rounded-lg border border-accent bg-accent px-4 py-1.5 text-[13px] font-medium text-white hover:brightness-105 disabled:opacity-40"
+                className="shrink-0 rounded-lg border border-accent text-accent bg-panel px-4 py-1.5 text-[13px] font-semibold hover:bg-accentSoft disabled:opacity-40"
                 onClick={() => ps.runTestAndSave()}
                 disabled={ps.verify.state === "testing"}
                 data-testid={`${tp}-test`}

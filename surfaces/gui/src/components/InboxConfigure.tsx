@@ -26,9 +26,10 @@ import { Icon } from "./Icon";
 // sessions (DM route, channel subscriptions), and the Unrouted dead-letter. Moving it here
 // also deleted a duplication: the mirror channel used to be editable BOTH on this page and
 // via an inline configurator on the Inbox list.
+import { BTN_ACCENT_SM } from "../ui/accentButtons";
+
 const CARD = "rounded-xl2 border border-line bg-panel";
 const SELECT = "px-2.5 py-1.5 rounded-lg border border-line bg-paper text-[13px] text-ink";
-const BTN_ACCENT_SM = "text-[12px] px-2.5 py-1 rounded-md bg-accent text-white disabled:opacity-50";
 
 export function InboxConfigure() {
   const { t } = useI18n();

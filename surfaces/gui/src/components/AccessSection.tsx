@@ -34,6 +34,7 @@ import { ConnectSetup } from "./ManageTabs";
 import { RootRow } from "./RootRow";
 import { ChannelPicker } from "./SubscriptionsChip";
 import { Toggle } from "./Toggle";
+import { BTN_ACCENT_MD } from "../ui/accentButtons";
 
 // A channel address's platform: "slack:C0123" → "slack"; a bare id or "#mention" defaults to
 // slack (the backend's own default when no platform prefix is given).
@@ -42,7 +43,6 @@ const platformOf = (channel: string) => (channel.includes(":") ? channel.split("
 const SEC_H = "text-[11px] uppercase tracking-[0.05em] text-faint font-semibold";
 const TAG_CORE =
   "text-[10px] px-1.5 py-0.5 rounded-full bg-warnSoft/70 text-warnInk border border-warnInk/15";
-const BTN_ACCENT = "text-[12px] px-2.5 py-1.5 rounded-lg bg-accent text-white shrink-0";
 const BTN_BORDERED =
   "text-[12px] px-2.5 py-1.5 rounded-lg border border-line bg-paper hover:border-lineStrong shrink-0";
 
@@ -391,7 +391,7 @@ export function AccessSection({
                           </div>
                         </div>
                         <button
-                          className={r.tier === "core" ? BTN_ACCENT : BTN_BORDERED}
+                          className={r.tier === "core" ? BTN_ACCENT_MD : BTN_BORDERED}
                           onClick={() => {
                             // Connect IN CONTEXT when we ship this connector; unknown refs
                             // (no descriptor) still fall back to the global page.
@@ -556,7 +556,7 @@ function ChannelsInline({
       <div className={`${SEC_H} mt-3 mb-1.5`}>{t("Add a channel")}</div>
       <div className="flex items-center gap-1.5">
         <ChannelPicker value={draft} onChange={onDraft} recent={recent} onSubmit={onAdd} />
-        <button className={BTN_ACCENT} disabled={!draft.trim()} onClick={onAdd}>
+        <button className={BTN_ACCENT_MD} disabled={!draft.trim()} onClick={onAdd}>
           {t("Add")}
         </button>
       </div>

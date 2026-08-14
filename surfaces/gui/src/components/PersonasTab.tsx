@@ -16,13 +16,14 @@ import { Icon } from "./Icon";
 // set the default, and install more from a local directory or a GitHub repo (snapshotted).
 // Re-skinned to the mock's Tailwind card idiom (§ Settings-as-page); the page title supplies the
 // heading, so this drops its own "Personas" sub-header.
+import { BTN_ACCENT, BTN_ACCENT_MD } from "../ui/accentButtons";
+
 const CARD = "rounded-xl2 border border-line bg-panel";
 const SEC_H = "text-[11px] uppercase tracking-[0.05em] text-faint font-semibold";
 const CHECK = "flex items-center gap-1.5 text-[12.5px] text-muted select-none shrink-0";
 const SELECT = "px-2.5 py-2 rounded-lg border border-line bg-paper text-[13px] text-ink shrink-0";
 const INPUT =
   "flex-1 min-w-0 px-3 py-2 rounded-lg border border-line bg-paper text-[13px] text-ink outline-none focus:border-accent";
-const BTN_ACCENT = "text-[12.5px] px-3 py-2 rounded-lg bg-accent text-white shrink-0 disabled:opacity-40";
 const BTN_BORDERED =
   "text-[12.5px] px-2.5 py-1.5 rounded-lg border border-line bg-paper hover:border-lineStrong shrink-0 disabled:opacity-40 disabled:hover:border-line";
 
@@ -196,7 +197,7 @@ export function PersonasTab({ onOpenPersona }: { onOpenPersona?: (id: string) =>
                   )}
                 </span>
                 <button
-                  className="text-[12px] px-2.5 py-1.5 rounded-lg bg-accent text-white shrink-0"
+                  className={BTN_ACCENT_MD}
                   data-testid={`persona-disable-confirm-${p.id}`}
                   onClick={() => {
                     setConfirmOff(null);

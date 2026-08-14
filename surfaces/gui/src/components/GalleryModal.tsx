@@ -17,9 +17,9 @@ import { PersonaHero } from "./PersonaHero";
 // unavailable (cloud disabled), show an empty/unavailable state. Folder/Git
 // installs on the Personas page still work without cloud.
 
+import { BTN_ACCENT } from "../ui/accentButtons";
+
 const CARD = "rounded-xl border border-line bg-panel/60";
-const BTN_ACCENT =
-  "text-[12.5px] px-3 py-2 rounded-lg bg-accent text-white shrink-0 disabled:opacity-40";
 const CHIP = "text-[10.5px] px-1.5 py-0.5 rounded border border-line text-muted";
 
 type Source = "all" | "tonworker" | "team";

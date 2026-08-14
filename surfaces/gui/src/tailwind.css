@@ -3,3 +3,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* 全局 accent 主操作：描边 + 文字，hover 才铺 accentSoft */
+  .btn-accent {
+    @apply border border-accent text-accent bg-panel font-semibold hover:bg-accentSoft disabled:opacity-40 disabled:hover:bg-panel;
+  }
+  .pill-accent {
+    @apply border border-accent text-accent bg-panel font-medium hover:bg-accentSoft disabled:opacity-50;
+  }
+}

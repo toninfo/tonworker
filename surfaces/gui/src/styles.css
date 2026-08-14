@@ -449,7 +449,10 @@ button.btn { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 8
 button.btn.icon-only { display: inline-flex; align-items: center; justify-content: center; padding: 7px 9px; flex: none; color: var(--muted); }
 button.btn.icon-only:hover { color: var(--ink); }
 button.btn:hover { background: var(--paper); }
-button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.btn.primary {
+  background: var(--panel); border-color: var(--accent); color: var(--accent); font-weight: 600;
+}
+button.btn.primary:hover { background: var(--accent-soft); }
 button.btn.danger { color: var(--accent); }
 
 /* composer — the wrap/card/head/bar layout is supplied by Tailwind utilities on the elements
@@ -507,7 +510,12 @@ button.btn.danger { color: var(--accent); }
 .dd-label { font-size: 13.5px; color: var(--ink); display: flex; justify-content: space-between; align-items: center; }
 .dd-item .chk { color: var(--accent); }
 .dd-desc { font-size: 12px; color: var(--faint); margin-top: 1px; }
-.send { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--accent); color: #fff; cursor: pointer; font-size: 16px; }
+.send {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--accent); background: var(--panel); color: var(--accent);
+  cursor: pointer; font-size: 16px;
+}
+.send:hover { background: var(--accent-soft); }
 .send:disabled { opacity: 0.4; cursor: default; }
 .statusline { max-width: 760px; margin: 6px auto 0; font-size: 12px; color: var(--faint); display: flex; gap: 12px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
@@ -781,7 +789,7 @@ button.btn.danger { color: var(--accent); }
 .topbar-artifacts-btn:hover { color: var(--ink); border-color: var(--accent); }
 .topbar-artifacts-count {
   min-width: 17px; padding: 0 5px; border-radius: 9px;
-  background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; text-align: center;
+  background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 600; text-align: center;
 }
 /* the inline add-folder form sits under the "Analyze the files in a directory" task row */
 .intro-addfolder { padding: 4px 6px 14px 6px; border-top: 1px solid var(--line); }
@@ -875,8 +883,12 @@ button.btn.danger { color: var(--accent); }
    (ManageTabs McpTab/McpRow/AddForm). */
 .mcp-error { color: var(--accent); font-size: 12.5px; margin-top: 6px; }
 
-button.btn-primary { font: inherit; font-size: 13px; padding: 8px 16px; border-radius: 9px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; align-self: flex-start; }
-button.btn-primary:hover { filter: brightness(1.05); }
+button.btn-primary {
+  font: inherit; font-size: 13px; padding: 8px 16px; border-radius: 9px;
+  border: 1px solid var(--accent); background: var(--panel); color: var(--accent);
+  font-weight: 600; cursor: pointer; align-self: flex-start;
+}
+button.btn-primary:hover { background: var(--accent-soft); }
 button.link { font: inherit; font-size: 12.5px; background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; }
 button.link:hover { color: var(--ink); }
 button.link.danger:hover { color: var(--accent); }
@@ -886,8 +898,8 @@ button.link:disabled { color: var(--faint); cursor: default; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .switch .slider { position: absolute; cursor: pointer; inset: 0; background: var(--line-strong); border-radius: 999px; transition: 0.15s; }
 .switch .slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.15s; }
-.switch input:checked + .slider { background: var(--accent); }
-.switch input:checked + .slider::before { transform: translateX(14px); }
+.switch input:checked + .slider { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.switch input:checked + .slider::before { transform: translateX(14px); background: var(--accent); }
 
 /* -- Connectors tab --------------------------------------------------------- */
 .conn-name { font-size: 14px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
@@ -950,7 +962,7 @@ button.btn.sm.danger-btn:hover { border-color: var(--danger); }
 /* UX-023: marks runs newer than the seen mark captured when the detail opened. */
 .run-new-pill {
   display: inline-block; margin-right: 8px; padding: 0 6px; border-radius: 999px;
-  background: var(--accent); color: #fff; font-size: 10px; font-weight: 600; line-height: 16px;
+  background: var(--accent-soft); color: var(--accent); font-size: 10px; font-weight: 600; line-height: 16px;
 }
 /* Run row = a launcher into the run's conversation. */
 .sched-run.open { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; padding: 4px 12px 10px; cursor: pointer; background: var(--panel); }
@@ -1092,7 +1104,7 @@ button.btn.sm.danger-btn:hover { border-color: var(--danger); }
   color: var(--muted);
   flex: none;
 }
-.ob-rail-item.active .ob-dot { background: var(--accent); color: #fff; }
+.ob-rail-item.active .ob-dot { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
 .ob-rail-item.done .ob-dot { background: var(--ok); color: #fff; }
 .ob-body { grid-column: 2; padding: 40px 40px 16px; overflow-y: auto; }
 .ob-step h2 { font-family: var(--serif); margin: 0 0 8px; font-size: 25px; color: var(--ink); }
@@ -1242,7 +1254,7 @@ button.btn.ghost:hover { color: var(--ink); }
 .inbox-session-chip:disabled { cursor: default; opacity: 0.6; }
 .inbox-chip-ico { width: 18px; height: 18px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; color: #fff; flex: none; }
 .inbox-chip-ico.ico-cowork { background: #16a34a; }
-.inbox-chip-ico.ico-chat { background: var(--accent); }
+.inbox-chip-ico.ico-chat { background: var(--accent-soft); color: var(--accent); }
 .inbox-chip-ico.ico-code { background: #7c3aed; }
 .inbox-chip-ico.ico-ops { background: #ea580c; }
 .inbox-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1313,12 +1325,13 @@ html[data-theme="dark"] :not(.connector-badge) > .connector-icon[data-dark-mark]
   transition: transform 0.12s;
 }
 .tgl.on {
-  background: var(--accent);
+  background: var(--accent-soft);
   border-color: var(--accent);
 }
 .tgl.on .knob {
   transform: translateX(14px);
   border-color: var(--accent);
+  background: var(--accent);
 }
 .tgl:disabled {
   opacity: 0.5;
@@ -1477,7 +1490,7 @@ html[data-theme="dark"] :not(.connector-badge) > .connector-icon[data-dark-mark]
 .hiw-owbody { display: flex; flex: 1; min-height: 0; }
 .hiw-owrail { width: 96px; flex: none; background: var(--panel); border-right: 1px solid var(--line); padding: 6px 5px; }
 .hiw-owrail .hiw-brand { font-weight: 700; font-size: 9px; letter-spacing: -.015em; padding: 0 3px 5px; color: var(--ink); }
-.hiw-newbtn { background: var(--accent); color: #fff; border-radius: 5px; padding: 3px 6px; font-size: 8px;
+.hiw-newbtn { color: var(--accent); background: var(--panel); border: 1px solid var(--accent); border-radius: 5px; padding: 3px 6px; font-size: 8px;
   font-weight: 600; margin-bottom: 5px; }
 .hiw-ownav { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 8px; padding: 2px 3px; }
 .hiw-owrail .hiw-sect { font-size: 7px; letter-spacing: .07em; font-weight: 700; color: var(--faint); margin: 6px 3px 2px; }
@@ -1497,7 +1510,7 @@ html[data-theme="dark"] :not(.connector-badge) > .connector-icon[data-dark-mark]
   font-size: 8.5px; color: var(--faint); background: var(--panel); flex: none; }
 .hiw-waitrow { display: flex; align-items: center; gap: 6px; font-size: 8.5px; padding: 5px 7px; margin: 9px 8px 0;
   border: 1px solid var(--line); border-radius: 7px; background: var(--warn-soft); color: var(--ink); }
-.hiw-allowbtn { font-size: 8.5px; font-weight: 600; color: #fff; background: var(--accent); border: 0;
+.hiw-allowbtn { font-size: 8.5px; font-weight: 600; color: var(--accent); background: var(--panel); border: 1px solid var(--accent);
   border-radius: 999px; padding: 2px 8px; white-space: nowrap; flex: none; }
 .hiw-waitcap { margin: 5px 10px; font-size: 8.5px; color: var(--muted); }
 

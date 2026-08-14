@@ -20,11 +20,11 @@ import { Toggle } from "./Toggle";
 // no scope vocabulary, no markdown, no files. Everything else memory does happens in
 // chat (toast §5.1, attribution §5.2).
 // fork：上游 Memory V1 全文走 i18n，默认中文。
+import { BTN_ACCENT } from "../ui/accentButtons";
+
 const CARD = "rounded-xl2 border border-line bg-panel";
 const FIELD_LABEL = "text-[12.5px] font-medium text-ink";
 const FIELD_HELP = "text-[12px] text-muted mt-1.5 leading-relaxed";
-const BTN_ACCENT =
-  "text-[12.5px] px-3 py-2 rounded-lg bg-accent text-white shrink-0 disabled:opacity-40";
 
 export function MemorySection() {
   const { t } = useI18n();

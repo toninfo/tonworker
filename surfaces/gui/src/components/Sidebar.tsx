@@ -22,6 +22,11 @@ import { baseName } from "../paths";
 import { showPersonas } from "../flags";
 import { t as tStatic } from "../i18n";
 import { useI18n } from "../i18n/react";
+import {
+  NEW_SESSION_CHEVRON,
+  NEW_SESSION_PRIMARY,
+  NEW_SESSION_SHELL,
+} from "../ui/accentButtons";
 
 // Session surfaces shown as accordions, in display order. The surfaced personas drive this list
 // (so third-party / Ops personas appear); the hardcoded set is the fallback before personas load.
@@ -754,8 +759,8 @@ export function Sidebar(props: Props) {
                       >
                         <span
                           className={
-                            "w-3.5 h-3.5 rounded border grid place-items-center shrink-0 text-white " +
-                            (checked ? "bg-accent border-accent" : "border-line")
+                            "w-3.5 h-3.5 rounded border grid place-items-center shrink-0 " +
+                            (checked ? "bg-accentSoft border-accent text-accent" : "border-line text-transparent")
                           }
                         >
                           {checked && <span className="text-[9px] leading-none">✓</span>}
@@ -1246,19 +1251,19 @@ function NewSessionSplit({
   const solo = personas !== null && enabled.length <= 1;
   return (
     <div className="px-3 pt-2 relative">
-      <div className="flex">
+      <div className={NEW_SESSION_SHELL + (solo ? " rounded-lg" : "")}>
         <button
           className={
-            "newsplit-primary flex-1 text-left px-3 py-2 bg-accent text-white text-[13px] font-medium hover:opacity-95 flex items-center gap-2 " +
-            (solo ? "rounded-lg" : "rounded-l-lg")
+            NEW_SESSION_PRIMARY +
+            (solo ? " rounded-lg" : "")
           }
           onClick={() => onNew(solo && enabled.length === 1 ? enabled[0].id : current)}
         >
-          <Icon name="plus" size={15} className="shrink-0" /> {t("New session")}
+          <Icon name="plus" size={15} className="shrink-0 text-accent" /> {t("New session")}
         </button>
         {!solo && (
           <button
-            className="px-2.5 rounded-r-lg bg-accent text-white border-l border-white/25 hover:opacity-95 flex items-center"
+            className={NEW_SESSION_CHEVRON + " rounded-r-lg"}
             title={t("Start with a specific persona")}
             aria-label={t("Choose a persona")}
             onClick={() => setOpen((v) => !v)}

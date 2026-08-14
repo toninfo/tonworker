@@ -694,7 +694,7 @@ export function Composer(props: Props) {
               className={
                 "w-7 h-7 rounded-full grid place-items-center shrink-0 transition-colors " +
                 (hasContent && props.connected && !dictation?.recording && !dictationBusy
-                  ? "bg-accent text-white hover:brightness-105"
+                  ? "border border-accent text-accent bg-panel hover:bg-accentSoft"
                   : "bg-paper border border-line text-faint")
               }
               onClick={submit}

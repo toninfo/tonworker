@@ -101,7 +101,7 @@ export function UpdateBanner() {
       )}
       <div className="flex items-center gap-2 mt-2.5">
         <button
-          className="px-3 py-1.5 rounded-full bg-accent text-white text-[12.5px] disabled:opacity-50"
+          className="px-3 py-1.5 rounded-full border border-accent text-accent bg-panel text-[12.5px] font-semibold hover:bg-accentSoft disabled:opacity-50 disabled:hover:bg-panel"
           onClick={install}
           disabled={busy}
           data-testid="update-install"

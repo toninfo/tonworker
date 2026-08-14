@@ -21,7 +21,7 @@ import {
 // Shared styles (mock parity — same language as SourcesDrawer/PersonaView).
 const SEC = "text-[11px] uppercase tracking-[0.05em] text-faint font-semibold";
 const BTN_PRIMARY =
-  "px-3 py-1.5 rounded-lg bg-accent text-white text-[12.5px] font-medium hover:brightness-105 disabled:opacity-40 disabled:hover:brightness-100";
+  "px-3 py-1.5 rounded-lg border border-accent text-accent bg-panel text-[12.5px] font-semibold hover:bg-accentSoft disabled:opacity-40 disabled:hover:bg-panel";
 const BTN_BORDERED =
   "px-3 py-1.5 rounded-lg border border-line bg-paper text-[12.5px] hover:border-lineStrong";
 // §35 approval buttons: blue border for the primary, quiet Deny (matches ApprovalCard).
