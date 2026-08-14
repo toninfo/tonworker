@@ -280,7 +280,11 @@ export interface McpServer {
 
 export async function getMcpServers(): Promise<McpServer[]> {
   const res = await fetch(`${httpBase()}/v1/mcp`);
-  return (await res.json()).servers ?? [];
+  if (!res.ok) {
+    throw new Error(`MCP list failed (${res.status})`);
+  }
+  const data = await res.json();
+  return data.servers ?? [];
 }
 
 export async function addMcpServer(name: string, config: Record<string, any>) {
@@ -576,7 +580,11 @@ export interface ConnectorTool {
 
 export async function getConnectors(): Promise<Connector[]> {
   const res = await fetch(`${httpBase()}/v1/connectors`);
-  return (await res.json()).connectors ?? [];
+  if (!res.ok) {
+    throw new Error(`connectors failed (${res.status})`);
+  }
+  const data = await res.json();
+  return data.connectors ?? [];
 }
 
 export async function connectConnector(

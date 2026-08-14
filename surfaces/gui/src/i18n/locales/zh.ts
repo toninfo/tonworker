@@ -673,6 +673,8 @@ export const zh: Record<string, string> = {
   "Nothing matches.": "没有匹配项。",
   "Couldn't load connectors — is the local server running?":
     "无法加载连接器 — 本地服务是否在运行？",
+  "Couldn't load MCP servers — is the local server running?":
+    "无法加载 MCP 服务 — 本地服务是否在运行？",
   "Offline": "离线",
   "Offline — can't reach the relay": "离线 — 无法连上中继",
   "One @ocw app, installed per workspace — each keeps its own allow-list.": "一个 @ocw 应用，按工作区安装 — 各自维护白名单。",

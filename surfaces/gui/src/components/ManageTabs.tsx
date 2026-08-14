@@ -248,8 +248,18 @@ export function McpTab() {
   const [servers, setServers] = useState<McpServer[]>([]);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const refresh = () => getMcpServers().then(setServers).catch(() => setServers([]));
+  const refresh = () =>
+    getMcpServers()
+      .then((list) => {
+        setServers(list);
+        setLoadError(null);
+      })
+      .catch((err) => {
+        setServers([]);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
   useEffect(() => {
     refresh();
   }, []);
@@ -284,6 +294,13 @@ export function McpTab() {
         </button>
         .
       </p>
+
+      {loadError && (
+        <div className={CARD + " p-3.5 text-[12.5px] text-muted"} data-testid="mcp-load-error">
+          {t("Couldn't load MCP servers — is the local server running?")}
+          <span className="block text-[11.5px] text-faint mt-1 truncate">{loadError}</span>
+        </div>
+      )}
 
       {servers.length === 0 && !adding ? (
         <div className={CARD + " p-4 text-[13px] text-muted"}>

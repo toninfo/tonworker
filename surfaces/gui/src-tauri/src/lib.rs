@@ -49,13 +49,12 @@ fn launch_token() -> String {
 
 /// Path to the server entrypoint. Resolution order:
 ///   1. `COWORKER_SERVER_BIN` env override.
-///   2. The bundled onedir sidecar shipped via Tauri `resources` (production): the
-///      `sidecar/` folder lands in Contents/Resources on macOS and in the install dir
-///      (next to the app exe) on Windows.
-///   3. Legacy onefile slot: `tonworker-server[.exe]` next to the app binary (pre-onedir
-///      builds used Tauri externalBin).
-///   4. Dev fallback: the repo venv, relative to this crate (`src-tauri` → repo-root `.venv`;
-///      `bin/` on POSIX, `Scripts\` on Windows).
+///   2. The bundled onedir sidecar shipped via Tauri `resources` (production):
+///      - macOS: Contents/Resources/sidecar/
+///      - Windows: <install>/sidecar/
+///      - Linux AppImage/deb: usr/lib/TonWorker/sidecar/ (APPDIR or ../lib from usr/bin)
+///   3. Legacy onefile slot: `tonworker-server[.exe]` next to the app binary.
+///   4. Dev fallback: repo `.venv/bin/tonworker-server`.
 fn server_bin() -> PathBuf {
     if let Ok(p) = std::env::var("COWORKER_SERVER_BIN") {
         return PathBuf::from(p);
@@ -65,22 +64,41 @@ fn server_bin() -> PathBuf {
     } else {
         "tonworker-server"
     };
+
+    let mut candidates: Vec<PathBuf> = Vec::new();
+
+    // Linux AppImage launcher sets APPDIR; sidecar lives under usr/lib/TonWorker/sidecar/.
+    if let Ok(appdir) = std::env::var("APPDIR") {
+        candidates.push(
+            PathBuf::from(appdir)
+                .join("usr/lib/TonWorker/sidecar")
+                .join(exe_name),
+        );
+    }
+
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            // macOS: Contents/MacOS/<app> → Contents/Resources/sidecar/; Windows: resources
-            // unpack next to the exe, so <install>/sidecar/.
-            let mut candidates = vec![dir.join("sidecar").join(exe_name)];
-            if let Some(contents) = dir.parent() {
-                candidates.push(contents.join("Resources").join("sidecar").join(exe_name));
+            // Windows: resources unpack next to the exe.
+            candidates.push(dir.join("sidecar").join(exe_name));
+            if let Some(parent) = dir.parent() {
+                // macOS: Contents/MacOS/<app> → Contents/Resources/sidecar/
+                candidates.push(parent.join("Resources").join("sidecar").join(exe_name));
+                // Linux: usr/bin/<app> → usr/lib/TonWorker/sidecar/
+                #[cfg(not(windows))]
+                candidates.push(
+                    parent.join("lib").join("TonWorker").join("sidecar").join(exe_name),
+                );
             }
             candidates.push(dir.join(exe_name)); // legacy onefile externalBin slot
-            for c in candidates {
-                if c.exists() {
-                    return c;
-                }
-            }
         }
     }
+
+    for c in candidates {
+        if c.exists() {
+            return c;
+        }
+    }
+
     let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     if cfg!(windows) {
         p.push("../../../.venv/Scripts/tonworker-server.exe");
