@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { getConnectors } from "../api";
-import { useI18n } from "../i18n/react";
 import { McpTab } from "./ManageTabs";
 import { ConnectorsSection } from "./connectors/ConnectorsSection";
 import { Icon } from "./Icon";
@@ -12,50 +11,50 @@ import { Icon } from "./Icon";
 // the account menu.
 type IntTab = "connectors" | "mcp";
 
+// Fixed sub-nav (UX-DECISIONS §21): connector detail lives as a SUBPAGE under
+// Connectors, never as a nav item — the nav must not grow per connector.
+const INT_TABS: { key: IntTab; label: string; icon: "plug" | "code" }[] = [
+  { key: "connectors", label: "Connectors", icon: "plug" },
+  { key: "mcp", label: "MCP servers", icon: "code" },
+];
+
 export function IntegrationsView() {
-  const { t } = useI18n();
   const [tab, setTab] = useState<IntTab>("connectors");
   // Sub-nav count: how many connectors exist. Polled so the badge stays live.
   const [connCount, setConnCount] = useState<number | null>(null);
-
-  // Fixed sub-nav (UX-DECISIONS §21)：标签走 t()，locale 切换时随渲染更新
-  const INT_TABS: { key: IntTab; label: string; icon: "plug" | "code" }[] = [
-    { key: "connectors", label: t("Connectors"), icon: "plug" },
-    { key: "mcp", label: t("MCP servers"), icon: "code" },
-  ];
 
   useEffect(() => {
     const load = () => {
       getConnectors().then((cs) => setConnCount(cs.length)).catch(() => {});
     };
     load();
-    const timer = setInterval(load, 5000);
-    return () => clearInterval(timer);
+    const t = setInterval(load, 5000);
+    return () => clearInterval(t);
   }, []);
 
   return (
     <main className="flex-1 min-w-0 flex bg-paper">
       <nav className="page-subnav w-[208px] shrink-0 border-r border-line bg-panel/40 px-3 py-4">
         <div className="px-2 text-[13.5px] font-semibold mb-3 flex items-center gap-2">
-          <Icon name="plug" size={16} /> {t("Connectors")}
+          <Icon name="plug" size={16} /> Connectors
         </div>
-        {INT_TABS.map((item) => {
-          const active = tab === item.key;
+        {INT_TABS.map((t) => {
+          const active = tab === t.key;
           return (
             <button
-              key={item.key}
+              key={t.key}
               className={
                 "w-full text-left px-2.5 py-2 rounded-lg text-[13px] flex items-center justify-between " +
                 (active
                   ? "bg-paper text-accent font-medium"
                   : "text-muted hover:bg-paper hover:text-ink")
               }
-              onClick={() => setTab(item.key)}
+              onClick={() => setTab(t.key)}
             >
               <span className="flex items-center gap-2 min-w-0">
-                <Icon name={item.icon} size={15} /> {item.label}
+                <Icon name={t.icon} size={15} /> {t.label}
               </span>
-              {item.key === "connectors" && connCount != null && (
+              {t.key === "connectors" && connCount != null && (
                 <span className={"text-[11px] shrink-0 " + (active ? "text-accent" : "text-faint")}>
                   {connCount}
                 </span>
@@ -70,16 +69,16 @@ export function IntegrationsView() {
           {tab === "connectors" ? (
             <section>
               <PanelHead
-                title={t("Connectors")}
-                sub={t("Apps and tools your coworkers can use. Connected ones come first.")}
+                title="Connectors"
+                sub="Apps and tools your coworkers can use. Connected ones come first."
               />
               <ConnectorsSection />
             </section>
           ) : (
             <section>
               <PanelHead
-                title={t("MCP servers")}
-                sub={t("External tool servers (stdio or HTTP), shared across all agents.")}
+                title="MCP servers"
+                sub="External tool servers (stdio or HTTP), shared across all agents."
               />
               <McpTab />
             </section>

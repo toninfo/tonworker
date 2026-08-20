@@ -6,10 +6,6 @@ Slack↔cloud claim (that leg is invisible from the desktop).
 
 from __future__ import annotations
 
-import pytest
-
-pytestmark = pytest.mark.skip(reason="TonWorker Cloud / relay removed in this fork")
-
 import asyncio
 from types import SimpleNamespace
 

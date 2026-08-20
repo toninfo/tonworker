@@ -9,10 +9,6 @@ flips the connector off without resurrecting any stored manual creds.
 from __future__ import annotations
 
 import pytest
-
-pytestmark = pytest.mark.skip(reason="TonWorker Cloud / relay removed in this fork")
-
-import pytest
 from fastapi.testclient import TestClient
 
 from coworker import cloud

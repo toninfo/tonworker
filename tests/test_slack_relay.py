@@ -4,10 +4,6 @@ addressing, per-team reply tokens. Hermetic: an injected fake relay transport
 
 from __future__ import annotations
 
-import pytest
-
-pytestmark = pytest.mark.skip(reason="TonWorker Cloud / relay removed in this fork")
-
 import asyncio
 
 import pytest

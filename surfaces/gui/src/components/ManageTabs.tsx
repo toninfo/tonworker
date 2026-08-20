@@ -19,6 +19,7 @@ import {
   setDefaultModel,
   updateConnectorTools,
   type Connector,
+  type CloudStatus,
   type Subscription,
   type McpServer,
   type ModelSettings,
@@ -794,13 +795,18 @@ export function ConnectorTools({ c, onChanged }: { c: Connector; onChanged: () =
 
 // Exported: also hosted inside the SourcesDrawer's connect-in-context child panel, so a
 // recommended connector can be connected without leaving the session (owner ask, 2026-07-03).
-// Manual token / field paste only — managed + MCP one-click OAuth UI is retired.
+// Manual token / field paste only — managed + MCP one-click OAuth UI is retired in this fork;
+// `cloud` / `manualOnly` stay on the signature so upstream connector panes compile unchanged.
 export function ConnectSetup({
   c,
   onConnected,
+  cloud: _cloud = null,
+  manualOnly: _manualOnly = false,
 }: {
   c: Connector;
   onConnected: () => void;
+  cloud?: CloudStatus | null;
+  manualOnly?: boolean;
 }) {
   const { t } = useI18n();
   const [values, setValues] = useState<Record<string, string>>({});

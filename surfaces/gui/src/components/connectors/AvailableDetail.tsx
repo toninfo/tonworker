@@ -1,22 +1,24 @@
 import { useState } from "react";
-import { type Connector } from "../../api";
+import { type CloudStatus, type Connector } from "../../api";
 import { ConnectorBadge } from "../../connectors/ConnectorIcon";
-import { useI18n } from "../../i18n/react";
 import { AddConnectionModal } from "./AddConnectionModal";
 import { FOOT, GRP, GRP_H, PILL_ACCENT, ROW, TAG_QUIET } from "./ui";
 
 // Pre-connect detail page (UX-DECISIONS §38): what a connector is for and what
-// access it gets, BEFORE any credentials exist. Connect opens the manual
-// add-connection modal (same as the list's Connect pill).
+// access it gets, BEFORE any credentials exist. About paragraph, honest Access
+// bullets, and the tool list behind a collapsed disclosure (advanced-reader
+// detail — no enable/disable pre-connect; that lever lives on the connected
+// page). Connect opens the same add-connection modal as the list's pill.
 
 export function AvailableDetail({
   c,
+  cloud,
   onChanged,
 }: {
   c: Connector;
+  cloud: CloudStatus | null;
   onChanged: () => void;
 }) {
-  const { t } = useI18n();
   const [connecting, setConnecting] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const tools = c.tools || [];
@@ -34,7 +36,7 @@ export function AvailableDetail({
           data-testid="available-connect"
           onClick={() => setConnecting(true)}
         >
-          {t("Connect")}
+          Connect
         </button>
       </div>
 
@@ -42,7 +44,7 @@ export function AvailableDetail({
 
       {(c.access?.length ?? 0) > 0 && (
         <>
-          <div className={GRP_H}>{t("Access")}</div>
+          <div className={GRP_H}>Access</div>
           <div className={GRP} data-testid="available-access">
             {c.access!.map((line) => (
               <div key={line} className={ROW + " !min-h-[36px] !py-2 text-[13px]"}>
@@ -51,14 +53,14 @@ export function AvailableDetail({
             ))}
           </div>
           <div className={FOOT}>
-            {t("Keys and tokens are stored only on this computer. Disconnect anytime.")}
+            Keys and tokens are stored only on this computer. Disconnect anytime.
           </div>
         </>
       )}
 
       {tools.length > 0 && (
         <>
-          <div className={GRP_H}>{t("Tools")}</div>
+          <div className={GRP_H}>Tools</div>
           <div className={GRP}>
             <button
               className={ROW + " w-full text-left hover:bg-paper/60 text-[13px]"}
@@ -66,22 +68,18 @@ export function AvailableDetail({
               onClick={() => setShowTools((v) => !v)}
             >
               <span className="min-w-0 flex-1 text-muted">
-                {tools.length === 1
-                  ? t("{n} tool this connector adds", { n: tools.length })
-                  : t("{n} tools this connector adds", { n: tools.length })}
+                {tools.length} tool{tools.length === 1 ? "" : "s"} this connector adds
               </span>
-              <span className="text-faint text-[13px] shrink-0">
-                {showTools ? t("Hide") : t("View")}
-              </span>
+              <span className="text-faint text-[13px] shrink-0">{showTools ? "Hide" : "View"}</span>
             </button>
             {showTools &&
-              tools.map((tool) => (
-                <div key={tool.name} className={ROW + " !min-h-[38px]"}>
+              tools.map((t) => (
+                <div key={t.name} className={ROW + " !min-h-[38px]"}>
                   <span className="min-w-0 flex-1">
-                    <span className="text-[13px]">{tool.label}</span>
-                    <span className="block text-[12px] text-muted">{tool.description}</span>
+                    <span className="text-[13px]">{t.label}</span>
+                    <span className="block text-[12px] text-muted">{t.description}</span>
                   </span>
-                  {tool.kind !== "read" && <span className={TAG_QUIET}>{t("asks first")}</span>}
+                  {t.kind !== "read" && <span className={TAG_QUIET}>asks first</span>}
                 </div>
               ))}
           </div>
@@ -91,6 +89,7 @@ export function AvailableDetail({
       {connecting && (
         <AddConnectionModal
           c={c}
+          cloud={cloud}
           onClose={() => setConnecting(false)}
           onChanged={onChanged}
         />

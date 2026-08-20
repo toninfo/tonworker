@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { connectConnector, type Connector } from "../../api";
+import { connectConnector, type CloudStatus, type Connector } from "../../api";
 import { ConnectorBadge } from "../../connectors/ConnectorIcon";
 import { useI18n } from "../../i18n/react";
 import { ConnectSetup } from "../ManageTabs";
@@ -14,11 +14,13 @@ const INPUT =
 
 export function AddConnectionModal({
   c,
+  cloud: _cloud = null,
   title,
   onClose,
   onChanged,
 }: {
   c: Connector;
+  cloud?: CloudStatus | null;
   title?: string; // e.g. "Add a workspace" — defaults to "Connect {title}"
   onClose: () => void;
   onChanged: () => void;

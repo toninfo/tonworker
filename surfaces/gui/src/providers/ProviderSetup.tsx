@@ -7,8 +7,6 @@ import {
   type ProviderField as ProviderFieldT,
   type ProviderInfo,
 } from "../api";
-import { t } from "../i18n";
-import { useI18n } from "../i18n/react";
 import { openExternal } from "../tauri";
 import { PROVIDER_LOGOS, providerRank } from "./logos";
 
@@ -23,6 +21,8 @@ export const KEY_HELP: Record<string, { url: string; label: string }> = {
   anthropic: { url: "https://console.anthropic.com/settings/keys", label: "console.anthropic.com" },
   openai: { url: "https://platform.openai.com/api-keys", label: "platform.openai.com" },
   gemini: { url: "https://aistudio.google.com/apikey", label: "aistudio.google.com" },
+  ark: { url: "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey", label: "console.byteplus.com" },
+  "ark-agent-plan-cn": { url: "https://console.volcengine.com/ark/region:cn-beijing/openManagement?LLM=%7B%7D&advancedActiveKey=agentPlan", label: "console.volcengine.com" },
   openrouter: { url: "https://openrouter.ai/keys", label: "openrouter.ai" },
   bedrock: { url: "https://console.aws.amazon.com/bedrock/home#/api-keys", label: "the AWS Bedrock console" },
   fireworks: { url: "https://fireworks.ai/account/api-keys", label: "fireworks.ai" },
@@ -59,12 +59,12 @@ export function ProviderMark({ name, title, size = 32 }: { name: string; title: 
 export function relTime(epoch?: number | null): string | null {
   if (!epoch) return null;
   const secs = Math.max(0, Math.floor(Date.now() / 1000 - epoch));
-  if (secs < 90) return t("just now");
+  if (secs < 90) return "just now";
   const mins = Math.floor(secs / 60);
-  if (mins < 60) return t("{n}m ago", { n: mins });
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 48) return t("{n}h ago", { n: hrs });
-  return t("{n}d ago", { n: Math.floor(hrs / 24) });
+  if (hrs < 48) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 export interface ProviderSetupState {
@@ -156,12 +156,9 @@ export function useProviderSetup(opts?: { onSaved?: () => void }): ProviderSetup
   const runTestAndSave = async (): Promise<boolean> => {
     if (!sel) return false;
     setVerify({ state: "testing" });
-    const res = await verifyProvider(sel, fields).catch(() => ({
-      ok: false,
-      error: t("unreachable"),
-    }));
+    const res = await verifyProvider(sel, fields).catch(() => ({ ok: false, error: "unreachable" }));
     if (!res.ok) {
-      setVerify({ state: "error", msg: res.error || t("couldn't verify") });
+      setVerify({ state: "error", msg: res.error || "couldn't verify" });
       return false;
     }
     if (dirty || !info?.configured) await setProvider(sel, fields).catch(() => {});
@@ -224,22 +221,17 @@ export function useProviderSetup(opts?: { onSaved?: () => void }): ProviderSetup
       const used = o?.lastUsed ? relTime(p.last_used_at) : null;
       return (
         <span className="block text-[11.5px] text-ok font-medium truncate">
-          {t("✓ Connected")}
-          {used ? <span className="text-muted font-normal">{t(" · used {when}", { when: used })}</span> : ""}
+          ✓ Connected{used ? <span className="text-muted font-normal"> · used {used}</span> : ""}
         </span>
       );
     }
     if (!p.needs_key)
       return (
         <span className="block text-[11.5px] text-faint truncate">
-          {keylessOk.has(p.name) ? (
-            <span className="text-ok font-medium">{t("✓ Running")}</span>
-          ) : (
-            t("No key needed")
-          )}
+          {keylessOk.has(p.name) ? <span className="text-ok font-medium">✓ Running</span> : "No key needed"}
         </span>
       );
-    return <span className="block text-[11.5px] text-faint truncate">{t("Not set up")}</span>;
+    return <span className="block text-[11.5px] text-faint truncate">Not set up</span>;
   };
 
   return {
@@ -293,8 +285,6 @@ export function ProviderCards({
   gridClass?: string;
   lastUsed?: boolean;
 }) {
-  // 订阅 locale，确保 statusFor 内模块级 t() 在切语言后刷新
-  useI18n();
   const card =
     "flex items-center gap-2.5 rounded-xl border border-line bg-panel px-3 py-2.5 text-left hover:border-lineStrong transition-colors";
   return (
@@ -330,7 +320,6 @@ export function ProviderForm({
   tp: string;
   footer?: ReactNode;
 }) {
-  const { t } = useI18n();
   const { info, sel } = ps;
   const label = "block text-[12px] text-muted mt-3 mb-1";
   const input =
@@ -374,7 +363,7 @@ export function ProviderForm({
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ok bg-okSoft rounded-full px-2 py-0.5 pointer-events-none"
               data-testid={`${tp}-field-saved-${f.key}`}
             >
-              {t("✓ Saved")}
+              ✓ Saved
             </span>
           )}
           {/* §39: state lives IN the field — no status lines below. */}
@@ -383,7 +372,7 @@ export function ProviderForm({
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ok bg-okSoft rounded-full px-2 py-0.5 pointer-events-none"
               data-testid={`${tp}-saved-pill`}
             >
-              {info?.needs_key ? t("✓ Tested & saved") : t("✓ Detected")}
+              {info?.needs_key ? <>✓ Tested &amp; saved</> : <>✓ Detected</>}
             </span>
           )}
         </div>
@@ -394,7 +383,7 @@ export function ProviderForm({
             disabled={ps.verify.state === "testing" || (!ps.secretFilled && !ps.credentialed)}
             data-testid={`${tp}-test`}
           >
-            {ps.verify.state === "testing" ? "…" : info?.needs_key ? t("Test") : t("Detect")}
+            {ps.verify.state === "testing" ? "…" : info?.needs_key ? "Test" : "Detect"}
           </button>
         )}
       </div>
@@ -405,7 +394,7 @@ export function ProviderForm({
   return (
     <div>
       <button className="text-[12.5px] text-muted hover:text-ink" onClick={ps.backToGallery} data-testid={`${tp}-back`}>
-        {t("‹ All providers")}
+        ‹ All providers
       </button>
       <div className="flex items-center gap-3 mt-3 mb-1">
         <ProviderMark name={info?.name || ""} title={info?.title || ""} size={36} />
@@ -469,7 +458,7 @@ export function ProviderForm({
               <button
                 className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12px] font-mono text-ink hover:border-lineStrong"
                 onClick={() => void navigator.clipboard?.writeText(selected.command || "")}
-                title={t("Copy command")}
+                title="Copy command"
                 data-testid={`${tp}-cmd-copy`}
               >
                 {selected.command}
@@ -480,10 +469,10 @@ export function ProviderForm({
             <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-line pt-3">
               {ps.savedState ? (
                 <span className="text-[11.5px] font-medium text-ok" data-testid={`${tp}-saved-pill`}>
-                  {t("✓ Tested & saved")}
+                  ✓ Tested &amp; saved
                 </span>
               ) : (
-                <span className="text-[11.5px] text-faint">{t("Runs one read-only check, then saves.")}</span>
+                <span className="text-[11.5px] text-faint">Runs one read-only check, then saves.</span>
               )}
               <button
                 className="shrink-0 rounded-lg border border-accent text-accent bg-panel px-4 py-1.5 text-[13px] font-semibold hover:bg-accentSoft disabled:opacity-40"
@@ -491,7 +480,7 @@ export function ProviderForm({
                 disabled={ps.verify.state === "testing"}
                 data-testid={`${tp}-test`}
               >
-                {ps.verify.state === "testing" ? "…" : t("Test & save")}
+                {ps.verify.state === "testing" ? "…" : <>Test &amp; save</>}
               </button>
             </div>
           </div>
@@ -500,24 +489,24 @@ export function ProviderForm({
 
       {info?.needs_key && KEY_HELP[sel] && (
         <p className="text-[11.5px] text-faint mt-2">
-          {t("No key yet?")}{" "}
+          No key yet?{" "}
           <button
             className="text-muted underline decoration-line underline-offset-2 hover:text-ink"
             onClick={() => openExternal(KEY_HELP[sel].url)}
           >
-            {t("Create one at {label} ↗", { label: KEY_HELP[sel].label })}
+            Create one at {KEY_HELP[sel].label} ↗
           </button>{" "}
-          {t("— takes about a minute.")}
+          — takes about a minute.
         </p>
       )}
       {info && !info.needs_key && (
         <p className="text-[11.5px] text-faint mt-2">
-          {t("No API key needed — Ollama runs models on this computer.")}{" "}
+          No API key needed — Ollama runs models on this computer.{" "}
           <button
             className="text-muted underline decoration-line underline-offset-2 hover:text-ink"
             onClick={() => openExternal("https://ollama.com/download")}
           >
-            {t("Install Ollama ↗")}
+            Install Ollama ↗
           </button>
         </p>
       )}
@@ -536,7 +525,7 @@ export function ProviderForm({
               onClick={() => ps.setShowEndpoint(true)}
               data-testid={`${tp}-endpoint-link`}
             >
-              {t("Custom endpoint ⌄")}
+              Custom endpoint ⌄
             </button>
           );
         return (
@@ -557,7 +546,7 @@ export function ProviderForm({
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ok bg-okSoft rounded-full px-2 py-0.5 pointer-events-none"
                   data-testid={`${tp}-field-saved-${ep.key}`}
                 >
-                  {t("✓ Saved")}
+                  ✓ Saved
                 </span>
               )}
             </div>

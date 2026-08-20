@@ -1,8 +1,11 @@
-// Cold-boot: splash uses the Ton product logo (red-square mark), not a text glyph.
+// Cold-boot fixes (owner-hit 2026-07-23): the splash wears the real OpenWorker mark
+// (6-point star SVG, not the ✦ text glyph that read as another product's logo), and the
+// model picker recovers when the mount-time settings fetch loses the race against the
+// sidecar boot — previously "Loading models…" stuck until the user visited Settings.
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 
-test("boot splash shows the Ton logo mark, not a sparkle glyph", async ({ page }) => {
+test("boot splash shows the OpenWorker star, not the sparkle glyph", async ({ page }) => {
   // Hold health long enough to observe the splash.
   await page.route("**/v1/health", async (route) => {
     await new Promise((r) => setTimeout(r, 1500));
@@ -11,9 +14,9 @@ test("boot splash shows the Ton logo mark, not a sparkle glyph", async ({ page }
   await page.goto("/");
   const mark = page.locator(".boot-mark");
   await expect(mark).toBeVisible();
-  await expect(mark.getByTestId("ton-logo")).toBeVisible();
+  await expect(mark.locator("svg")).toBeVisible(); // the Icon logo, not a text glyph
   await expect(mark).not.toContainText("✦");
-  await expect(page.getByText(/Starting TonWorker|Restoring your session/)).toBeVisible();
+  await expect(page.getByText(/Starting OpenWorker|Restoring your session/)).toBeVisible();
 });
 
 test("model picker recovers when settings fetches die during sidecar boot", async ({ page }) => {

@@ -11,6 +11,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  CLOUD_CHANGED,
+  getCloudStatus,
   getConnectors,
   getRecentChannels,
   getSessionConnections,
@@ -18,6 +20,7 @@ import {
   setSessionConnection,
   subscribeChannel,
   unsubscribeChannel,
+  type CloudStatus,
   type Connector,
   type RecentChannel,
   type SessionConnections,
@@ -29,12 +32,10 @@ import { baseName } from "../paths";
 import { useRoots } from "../useRoots";
 import { AddFolderForm } from "./AddFolderForm";
 import { Icon } from "./Icon";
-import { useI18n } from "../i18n/react";
 import { ConnectSetup } from "./ManageTabs";
 import { RootRow } from "./RootRow";
 import { ChannelPicker } from "./SubscriptionsChip";
 import { Toggle } from "./Toggle";
-import { BTN_ACCENT_MD } from "../ui/accentButtons";
 
 // A channel address's platform: "slack:C0123" → "slack"; a bare id or "#mention" defaults to
 // slack (the backend's own default when no platform prefix is given).
@@ -43,6 +44,7 @@ const platformOf = (channel: string) => (channel.includes(":") ? channel.split("
 const SEC_H = "text-[11px] uppercase tracking-[0.05em] text-faint font-semibold";
 const TAG_CORE =
   "text-[10px] px-1.5 py-0.5 rounded-full bg-warnSoft/70 text-warnInk border border-warnInk/15";
+const BTN_ACCENT = "text-[12px] px-2.5 py-1.5 rounded-lg bg-accent text-white shrink-0";
 const BTN_BORDERED =
   "text-[12px] px-2.5 py-1.5 rounded-lg border border-line bg-paper hover:border-lineStrong shrink-0";
 
@@ -67,7 +69,6 @@ export function AccessSection({
   openKey?: number;
   onOpenIntegrations?: () => void;
 }) {
-  const { t, tn } = useI18n();
   const [open, setOpen] = useState(false);
   const [conns, setConns] = useState<SessionConnections | null>(null);
   const [byName, setByName] = useState<ConnectorMap>({});
@@ -120,6 +121,23 @@ export function AccessSection({
   const [addedFrom, setAddedFrom] = useState<string | null>(null);
   // Folders mirrors Sources: flat rows + a quiet "+" link that expands the inline form.
   const [addingFolder, setAddingFolder] = useState(false);
+  const [cloud, setCloud] = useState<CloudStatus | null>(null);
+  useEffect(() => {
+    if (!connectFor) return;
+    // null means UNKNOWN (renders as "checking"), never signed-out: a single failed
+    // fetch here used to demand sign-in from a signed-in user with no way to recover
+    // (FB-013). Poll while the connect pane is open, keep last-good on failure, and
+    // listen for the sign-in broadcast so the pane flips the moment login lands.
+    const load = () => getCloudStatus().then(setCloud).catch(() => {});
+    load();
+    const t = setInterval(load, 5000);
+    window.addEventListener(CLOUD_CHANGED, load);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener(CLOUD_CHANGED, load);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!connectFor]);
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [recent, setRecent] = useState<RecentChannel[]>([]);
   const [draft, setDraft] = useState("");
@@ -155,7 +173,7 @@ export function AccessSection({
     const channel = raw.includes(":") || raw.startsWith("#") ? raw : `${channelsFor}:${raw}`;
     const r = await subscribeChannel(sessionId, channel);
     if (!r.ok) {
-      setAddErr(r.error || t("Couldn't add that channel."));
+      setAddErr(r.error || "Couldn't add that channel.");
       return;
     }
     setAddErr(null);
@@ -194,14 +212,14 @@ export function AccessSection({
   const names = live.map((c) => labelFor(c.connector, byName));
   const sourcesPart =
     names.length === 0
-      ? t("no sources")
+      ? "no sources"
       : names.length <= 2
         ? names.join(", ")
         : `${names.slice(0, 2).join(", ")} +${names.length - 2}`;
   const folderPart = projectScoped
     ? baseName(workspace || roots.find((r) => r.primary)?.path || "") || null
     : roots.length > 0
-      ? tn("{n} folder", "{n} folders", roots.length)
+      ? `${roots.length} folder${roots.length === 1 ? "" : "s"}`
       : null;
   const summary = [sourcesPart, folderPart].filter(Boolean).join(" · ");
 
@@ -210,7 +228,7 @@ export function AccessSection({
       <div className="rail-section-head">
         <button className="rail-section-toggle" onClick={() => setOpen((v) => !v)} data-testid="access-toggle">
           <Icon name={open ? "chevronDown" : "chevronRight"} size={14} className="rail-chev" />
-          <span>{t("Access")}</span>
+          <span>Access</span>
           <span
             className="ml-auto min-w-0 truncate text-[11px] font-normal text-faint"
             data-testid="access-summary"
@@ -221,10 +239,11 @@ export function AccessSection({
         </button>
       </div>
       {open && (
-        <div className="rail-section-body" role="region" aria-label={t("Session access")}>
+        <div className="rail-section-body" role="region" aria-label="Session access">
           {connectFor ? (
             <ConnectInline
               c={connectFor}
+              cloud={cloud}
               onDone={() => {
                 const name = connectFor.name;
                 setConnectFor(null);
@@ -263,10 +282,10 @@ export function AccessSection({
             <div className="space-y-4">
               {/* Sources — each toggle is a per-session override (mute for THIS session only). */}
               <div>
-                <div className={`${SEC_H} mb-1.5`}>{t("Sources")}</div>
+                <div className={`${SEC_H} mb-1.5`}>Sources</div>
                 {connected.length === 0 && (
                   <div className="text-[12px] text-faint py-0.5">
-                    {t("No connectors enabled for this session.")}
+                    No connectors enabled for this session.
                   </div>
                 )}
                 <div className="space-y-1">
@@ -286,7 +305,7 @@ export function AccessSection({
                               setChannelsFor(c.connector);
                             }}
                           >
-                            {t("Channels · {n}", { n: channelsOf(c.connector).length })}
+                            Channels · {channelsOf(c.connector).length}
                             <Icon name="chevronRight" size={10} />
                           </button>
                         )}
@@ -294,14 +313,14 @@ export function AccessSection({
                       <Toggle
                         checked={c.enabled}
                         onChange={(next) => toggleSession(c.connector, next)}
-                        title={t("Enabled for this session — tap to mute here")}
+                        title="Enabled for this session — tap to mute here"
                       />
                     </div>
                   ))}
                 </div>
                 {connected.length > 0 && (
                   <p className="text-[10.5px] text-faint mt-1 leading-snug">
-                    {t("Off mutes it for")} <b>{t("this session only")}</b> {t("— the connector stays connected.")}
+                    Off mutes it for <b>this session only</b> — the connector stays connected.
                   </p>
                 )}
                 {/* §32 addendum (owner ask 2026-07-13; FB-012): the catalog's long tail,
@@ -311,7 +330,7 @@ export function AccessSection({
                   <div className="mt-1.5">
                     <input
                       className="w-full px-2.5 py-1.5 rounded-lg border border-line bg-panel text-[12.5px] outline-none focus:border-accent"
-                      placeholder={t("Search connectors…")}
+                      placeholder="Search connectors…"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => {
@@ -327,7 +346,7 @@ export function AccessSection({
                       // Also covers a failed/empty catalog fetch: an open picker must never
                       // be silently blank — point at the Connectors page either way.
                       <div className="text-[11.5px] text-faint mt-1.5 px-0.5">
-                        {t("No match — see all on the Connectors page below.")}
+                        No match — see all on the Connectors page below.
                       </div>
                     )}
                     <div className="mt-1 max-h-64 overflow-y-auto">
@@ -361,7 +380,7 @@ export function AccessSection({
                     onClick={() => setAdding(true)}
                     data-testid="access-add-source"
                   >
-                    {t("+ Add a source…")}
+                    + Add a source…
                   </button>
                 )}
                 {/* Lives with its list (tester ask 2026-07-26): each group's manage link sits
@@ -370,13 +389,13 @@ export function AccessSection({
                   className="mt-1.5 block text-[12px] text-accent font-medium hover:underline text-left"
                   onClick={() => onOpenIntegrations?.()}
                 >
-                  {t("Manage all connectors (global) →")}
+                  Manage all connectors (global) →
                 </button>
               </div>
 
               {recommended.length > 0 && (
                 <div>
-                  <div className={`${SEC_H} mb-1.5`}>{t("Recommended")}</div>
+                  <div className={`${SEC_H} mb-1.5`}>Recommended</div>
                   <div className="space-y-1">
                     {recommended.map((r) => (
                       <div className="flex items-center gap-2 py-1" key={r.connector}>
@@ -384,14 +403,14 @@ export function AccessSection({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 text-[12.5px] font-medium leading-tight">
                             <span className="truncate">{labelFor(r.connector, byName)}</span>
-                            {r.tier === "core" && <span className={TAG_CORE}>{t("core")}</span>}
+                            {r.tier === "core" && <span className={TAG_CORE}>core</span>}
                           </div>
                           <div className="text-[11px] text-faint truncate" title={r.reason}>
                             {r.reason}
                           </div>
                         </div>
                         <button
-                          className={r.tier === "core" ? BTN_ACCENT_MD : BTN_BORDERED}
+                          className={r.tier === "core" ? BTN_ACCENT : BTN_BORDERED}
                           onClick={() => {
                             // Connect IN CONTEXT when we ship this connector; unknown refs
                             // (no descriptor) still fall back to the global page.
@@ -400,7 +419,7 @@ export function AccessSection({
                             else onOpenIntegrations?.();
                           }}
                         >
-                          {t("Connect")}
+                          Connect
                         </button>
                       </div>
                     ))}
@@ -412,7 +431,7 @@ export function AccessSection({
                   a quiet "+" link, structurally identical to Sources (owner ask 2026-07-13:
                   the old drawer's card wrapper read too heavy in the rail). */}
               <div data-testid="drawer-directories">
-                <div className={`${SEC_H} mb-1.5`}>{t("Folders")}</div>
+                <div className={`${SEC_H} mb-1.5`}>Folders</div>
                 <div className="-mx-1.5">
                   {roots.map((r) => (
                     <RootRow
@@ -440,7 +459,7 @@ export function AccessSection({
                     className="mt-1 text-[12px] text-accent hover:underline text-left"
                     onClick={() => setAddingFolder(true)}
                   >
-                    {t("+ Give access to a folder…")}
+                    + Give access to a folder…
                   </button>
                 )}
                 {rootsError && <div className="roots-err">{rootsError}</div>}
@@ -454,35 +473,49 @@ export function AccessSection({
 }
 
 // Connect-in-context (§32 child view): the same ConnectSetup the global Connectors page uses,
-// hosted inline in the section so connecting never navigates away. Manual token paste only.
+// hosted inline in the section so connecting never navigates away. Managed connects complete
+// out-of-band (browser → broker → sidecar), so poll until the connector flips.
 function ConnectInline({
   c,
+  cloud,
   onDone,
   onBack,
 }: {
   c: Connector;
+  cloud: CloudStatus | null;
   onDone: () => void;
   onBack: () => void;
 }) {
-  const { t } = useI18n();
+  useEffect(() => {
+    const t = setInterval(async () => {
+      try {
+        const list = await getConnectors();
+        if (list.find((x) => x.name === c.name)?.connected) onDone();
+      } catch {
+        /* poll again */
+      }
+    }, 2500);
+    return () => clearInterval(t);
+  }, [c.name, onDone]);
 
   return (
     <div>
       <button
         className="inline-flex items-center gap-1 text-[12px] text-faint hover:text-ink mb-2"
         onClick={onBack}
-        aria-label={t("Back to sources")}
+        aria-label="Back to sources"
       >
-        <Icon name="arrowLeft" size={13} /> {t("Connect {name}", { name: c.title })}
+        <Icon name="arrowLeft" size={13} /> Connect {c.title}
       </button>
       {c.blurb && <p className="text-[12px] text-muted mb-1 leading-relaxed">{c.blurb}</p>}
       <div className="-mx-2">
-        <ConnectSetup c={c} onConnected={onDone} />
+        <ConnectSetup c={c} cloud={cloud} onConnected={onDone} />
       </div>
       {/* Scope semantics, stated once (owner ask 2026-07-13): connecting is account-level,
           the toggle above is what scopes it to a session. */}
       <p className="text-[10.5px] text-faint mt-2 leading-snug">
-        {t("Connecting makes {name} available to all your coworkers — the toggle in this list controls just this session.", { name: c.title })}
+        Connecting makes {c.title} available to all your coworkers — the toggle in this list
+        controls just this session.
       </p>
     </div>
   );
@@ -511,20 +544,19 @@ function ChannelsInline({
   onRemove: (channel: string) => void;
   onBack: () => void;
 }) {
-  const { t } = useI18n();
   return (
     <div>
       <button
         className="inline-flex items-center gap-1 text-[12px] text-faint hover:text-ink mb-2"
         onClick={onBack}
-        aria-label={t("Back to sources")}
+        aria-label="Back to sources"
       >
-        <Icon name="arrowLeft" size={13} /> {t("{label} channels", { label })}
+        <Icon name="arrowLeft" size={13} /> {label} channels
       </button>
-      <div className={`${SEC_H} mb-1.5`}>{t("Subscribed channels · {n}", { n: channels.length })}</div>
+      <div className={`${SEC_H} mb-1.5`}>Subscribed channels · {channels.length}</div>
       {channels.length === 0 ? (
         <div className="text-[12px] text-faint py-0.5">
-          {t("Not listening to any {label} channel yet.", { label })}
+          Not listening to any {label} channel yet.
         </div>
       ) : (
         <div className="space-y-1">
@@ -537,14 +569,14 @@ function ChannelsInline({
               {s.collision && (
                 <span
                   className="text-[10.5px] text-warnInk bg-warnSoft/70 border border-warnInk/15 rounded px-1 shrink-0"
-                  title={t("This channel is also this session's Inbox-routing target — inbound and outbound collide.")}
+                  title="This channel is also this session's Inbox-routing target — inbound and outbound collide."
                 >
                   ⚠
                 </span>
               )}
               <button
                 className="w-5 h-5 grid place-items-center text-faint hover:text-danger shrink-0"
-                title={t("Stop listening")}
+                title="Stop listening"
                 onClick={() => onRemove(s.channel)}
               >
                 ×
@@ -553,11 +585,11 @@ function ChannelsInline({
           ))}
         </div>
       )}
-      <div className={`${SEC_H} mt-3 mb-1.5`}>{t("Add a channel")}</div>
+      <div className={`${SEC_H} mt-3 mb-1.5`}>Add a channel</div>
       <div className="flex items-center gap-1.5">
         <ChannelPicker value={draft} onChange={onDraft} recent={recent} onSubmit={onAdd} />
-        <button className={BTN_ACCENT_MD} disabled={!draft.trim()} onClick={onAdd}>
-          {t("Add")}
+        <button className={BTN_ACCENT} disabled={!draft.trim()} onClick={onAdd}>
+          Add
         </button>
       </div>
       {error && (
@@ -566,7 +598,8 @@ function ChannelsInline({
         </p>
       )}
       <p className="text-[10.5px] text-faint mt-1.5 leading-snug">
-        {t("The agent receives messages posted to these channels. Removing one stops this session from listening — the connector stays connected.")}
+        The agent receives messages posted to these channels. Removing one stops this session
+        from listening — the connector stays connected.
       </p>
     </div>
   );

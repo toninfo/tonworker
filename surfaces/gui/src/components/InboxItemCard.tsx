@@ -2,7 +2,6 @@ import { useState, type ReactNode } from "react";
 import type { InboxItem } from "../api";
 import type { QuestionOption } from "../types";
 import { humanizeApprovalTitle } from "../humanize";
-import { useI18n } from "../i18n/react";
 import {
   approvalActionLabels,
   PreviewBlock,
@@ -21,7 +20,7 @@ import {
 // Shared styles (mock parity — same language as SourcesDrawer/PersonaView).
 const SEC = "text-[11px] uppercase tracking-[0.05em] text-faint font-semibold";
 const BTN_PRIMARY =
-  "px-3 py-1.5 rounded-lg border border-accent text-accent bg-panel text-[12.5px] font-semibold hover:bg-accentSoft disabled:opacity-40 disabled:hover:bg-panel";
+  "px-3 py-1.5 rounded-lg bg-accent text-white text-[12.5px] font-medium hover:brightness-105 disabled:opacity-40 disabled:hover:brightness-100";
 const BTN_BORDERED =
   "px-3 py-1.5 rounded-lg border border-line bg-paper text-[12.5px] hover:border-lineStrong";
 // §35 approval buttons: blue border for the primary, quiet Deny (matches ApprovalCard).
@@ -91,7 +90,6 @@ function specsFor(item: InboxItem): QSpec[] {
 // -- one question (options + free-text escape) --------------------------------
 
 function QuestionBlock({ spec, onAnswer }: { spec: QSpec; onAnswer: (a: string) => void }) {
-  const { t } = useI18n();
   const [selected, setSelected] = useState<string[]>([]);
   const [text, setText] = useState("");
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -114,7 +112,7 @@ function QuestionBlock({ spec, onAnswer }: { spec: QSpec; onAnswer: (a: string) 
 
   const recommendedTag = (
     <span className="text-[10px] uppercase tracking-[0.04em] font-semibold text-ok bg-okSoft border border-okLine rounded-full px-1.5 py-px shrink-0">
-      {t("Recommended")}
+      Recommended
     </span>
   );
 
@@ -191,7 +189,7 @@ function QuestionBlock({ spec, onAnswer }: { spec: QSpec; onAnswer: (a: string) 
             disabled={!selected.length}
             onClick={() => onAnswer(selected.join(", "))}
           >
-            {selected.length ? t("Send ({n})", { n: selected.length }) : t("Send")}
+            Send{selected.length ? ` (${selected.length})` : ""}
           </button>
         </div>
       )}
@@ -199,7 +197,7 @@ function QuestionBlock({ spec, onAnswer }: { spec: QSpec; onAnswer: (a: string) 
         <div className="flex items-center gap-2 mt-2.5">
           <input
             className={INPUT}
-            placeholder={options.length ? t("Or type your own answer…") : t("Your answer…")}
+            placeholder={options.length ? "Or type your own answer…" : "Your answer…"}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -207,7 +205,7 @@ function QuestionBlock({ spec, onAnswer }: { spec: QSpec; onAnswer: (a: string) 
             }}
           />
           <button className={BTN_PRIMARY} disabled={!text.trim()} onClick={() => onAnswer(text)}>
-            {t("Send")}
+            Send
           </button>
         </div>
       )}
@@ -226,7 +224,6 @@ function QuestionCard({
   onResolve: (id: string, resolution: string) => void;
   chip?: ReactNode;
 }) {
-  const { t } = useI18n();
   const specs = specsFor(item);
   const grouped = (item.questions?.length ?? 0) > 0;
   const [step, setStep] = useState(0);
@@ -255,26 +252,26 @@ function QuestionCard({
         {grouped && step > 0 && (
           <button
             className="text-faint hover:text-ink leading-none text-[13px]"
-            title={t("Previous question")}
-            aria-label={t("Previous question")}
+            title="Previous question"
+            aria-label="Previous question"
             onClick={() => setStep(step - 1)}
           >
             ‹
           </button>
         )}
         <span className={grouped ? "text-accent" : undefined}>
-          {spec.header || (grouped ? t("Question {n}", { n: step + 1 }) : t("question"))}
+          {spec.header || (grouped ? `Question ${step + 1}` : "question")}
         </span>
         {grouped && (
           <>
             <span>·</span>
             <span>
-              {t("{current} of {total}", { current: step + 1, total: specs.length })}
+              {step + 1} of {specs.length}
             </span>
             {next && (
               <>
                 <span>·</span>
-                <span>{(next.header || t("Question {n}", { n: step + 2 })) + " ›"}</span>
+                <span>{(next.header || `Question ${step + 2}`) + " ›"}</span>
               </>
             )}
           </>
@@ -302,8 +299,6 @@ export function InboxItemCard({
   chip?: ReactNode; // optional "go to session" affordance (shown in the Inbox list, not inline)
   compact?: boolean;
 }) {
-  // fork：保留 i18n；上游 OPE-51：问题卡交给 QuestionCard（富选项 / 分组步进）
-  const { t } = useI18n();
   const isQuestion = item.kind === "question";
   return (
     <div
@@ -351,7 +346,7 @@ export function InboxItemCard({
             className={item.data?.tool ? BTN_ACCENT : BTN_PRIMARY}
             onClick={() => onResolve(item.id, "allow")}
           >
-            {item.data?.tool ? approvalActionLabels(item.data.tool).allow : t("Approve")}
+            {item.data?.tool ? approvalActionLabels(item.data.tool).allow : "Approve"}
           </button>
           {/* Task-persistent standing grant (§25) — present only when the approval was
               raised inside an automation run AND the call can carry a tool+target rule.
@@ -359,23 +354,17 @@ export function InboxItemCard({
           {item.data?.task_id && item.data?.standing_target && (
             <button
               className={BTN_BORDERED}
-              title={t(
-                "Always allow against {target} for “{title}” — revoke any time on its Automations page",
-                {
-                  target: item.data.standing_target,
-                  title: item.data.task_title || t("this automation"),
-                },
-              )}
+              title={`Always allow against ${item.data.standing_target} for “${item.data.task_title || "this automation"}” — revoke any time on its Automations page`}
               onClick={() => onResolve(item.id, "always_task")}
             >
-              {t("Allow every time")}
+              Allow every time
             </button>
           )}
           <button
             className={item.data?.tool ? BTN_QUIET : BTN_BORDERED}
             onClick={() => onResolve(item.id, "deny")}
           >
-            {item.data?.tool ? approvalActionLabels(item.data.tool).deny : t("Deny")}
+            {item.data?.tool ? approvalActionLabels(item.data.tool).deny : "Deny"}
           </button>
         </div>
       ) : isQuestion ? (
@@ -385,7 +374,7 @@ export function InboxItemCard({
           <button
             className={BTN_PRIMARY}
             disabled={!item.data?.path}
-            title={item.data?.path || t("No folder was suggested")}
+            title={item.data?.path || "No folder was suggested"}
             onClick={() =>
               onResolve(
                 item.id,
@@ -393,10 +382,10 @@ export function InboxItemCard({
               )
             }
           >
-            {item.data?.path ? t("Grant") : t("Grant (no folder)")}
+            {item.data?.path ? "Grant" : "Grant (no folder)"}
           </button>
           <button className={BTN_BORDERED} onClick={() => onResolve(item.id, JSON.stringify({ granted: false }))}>
-            {t("Deny")}
+            Deny
           </button>
         </div>
       ) : item.kind === "plan" ? (
@@ -405,19 +394,19 @@ export function InboxItemCard({
             className={BTN_PRIMARY}
             onClick={() => onResolve(item.id, JSON.stringify({ approved: true, mode: "interactive" }))}
           >
-            {t("Approve")}
+            Approve
           </button>
           <button
             className={BTN_BORDERED}
             onClick={() => onResolve(item.id, JSON.stringify({ approved: false, feedback: "" }))}
           >
-            {t("Reject")}
+            Reject
           </button>
         </div>
       ) : (
         <div className="flex items-center gap-2 mt-2.5">
           <button className={BTN_BORDERED} onClick={() => onResolve(item.id, "seen")}>
-            {t("Dismiss")}
+            Dismiss
           </button>
         </div>
       )}

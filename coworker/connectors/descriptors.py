@@ -77,7 +77,7 @@ class ConnectorDescriptor:
     # (connectors/experimental/) that release builds exclude entirely.
     experimental: bool = False
     risk_notice: str = ""
-    # One-click managed OAuth via TonWorker Cloud (requires cloud sign-in).
+    # One-click managed OAuth via OpenWorker Cloud (requires cloud sign-in).
     # Manual token paste ALWAYS remains available — signed out or in — managed
     # is an extra path, never a replacement (local-only open-source flow is
     # sacred).
@@ -450,7 +450,7 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
         name="slack",
         title="Slack",
         icon="💬",
-        blurb="Two-way messaging — one-click via TonWorker Cloud, or a manual Slack app (Socket Mode).",
+        blurb="Two-way messaging — one-click via OpenWorker Cloud, or a manual Slack app (Socket Mode).",
         auth="socket_app",
         two_way=True,
         channels=True,
@@ -460,7 +460,7 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
         # "Connect Slack with one click" (no tokens). The manual Socket-Mode
         # fields below stay as the always-available fallback (slack → slack in
         # PROVIDER_FOR_CONNECTOR drives the broker start).
-        managed=False,
+        managed=True,
         fields=[
             Field(
                 "bot_token",
@@ -561,9 +561,9 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
             "Paste the access token below.",
         ],
         available=True,
-        managed=False,
+        managed=True,
         # Google OAuth verification (CASA) pending — one-click off until it clears.
-        managed_paused=False,
+        managed_paused=True,
     ),
     ConnectorDescriptor(
         name="google_calendar",
@@ -587,8 +587,8 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
             "Paste the access token below.",
         ],
         available=True,
-        managed=False,
-        managed_paused=False,  # same Google app as Gmail — paused until CASA clears
+        managed=True,
+        managed_paused=True,  # same Google app as Gmail — paused until CASA clears
     ),
     ConnectorDescriptor(
         name="browser",
@@ -631,7 +631,7 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
         ],
         available=True,
         # One-click managed path: install the GitHub App — no tokens typed.
-        managed=False,
+        managed=True,
     ),
     ConnectorDescriptor(
         name="outlook",
@@ -653,12 +653,12 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
             ),
         ],
         instructions=[
-            "One click connects via TonWorker Cloud (recommended).",
+            "One click connects via OpenWorker Cloud (recommended).",
             "Manual: paste a Microsoft Graph access token with Mail and Calendar scopes.",
         ],
         validate=_validate_outlook,
         available=True,
-        managed=False,
+        managed=True,
         # Key each connected mailbox by its email (the broker's `account` field,
         # from the Microsoft id_token) — same multi-account shape as Gmail/Drive.
         account_field="@identity",
@@ -913,7 +913,7 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
             "Copy the access token and paste it below.",
         ],
         validate=_validate_hubspot,
-        managed=False,
+        managed=True,
     ),
     ConnectorDescriptor(
         name="dropbox",
@@ -1131,8 +1131,8 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
         ],
         validate=_validate_google_drive,
         available=True,
-        managed=False,
-        managed_paused=False,  # same Google app as Gmail — paused until CASA clears
+        managed=True,
+        managed_paused=True,  # same Google app as Gmail — paused until CASA clears
         # Key each connected account by its Google email (the broker's `account`
         # field) so multiple Drive accounts list the same way Gmail's do, rather
         # than by the opaque `sub` that account_field="account_id" would use.
@@ -1256,14 +1256,14 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
             ),
         ],
         instructions=[
-            "One click connects via TonWorker Cloud (recommended).",
+            "One click connects via OpenWorker Cloud (recommended).",
             "Manual: create an internal integration at notion.so/my-integrations,",
             "copy its secret, and share the relevant pages with the integration.",
         ],
         validate=_validate_notion,
         brand_color="#1f2328",
         logo="notion",
-        managed=False,
+        managed=True,
         # Managed profiles key by the workspace id the broker sends
         # (account_id); a manual integration token falls back to the
         # validator's workspace name.
@@ -1285,13 +1285,13 @@ DESCRIPTORS: list[ConnectorDescriptor] = [
             ),
         ],
         instructions=[
-            "One click connects via TonWorker Cloud (recommended).",
+            "One click connects via OpenWorker Cloud (recommended).",
             "Manual: create an API key under Workspace Settings → Developers.",
         ],
         validate=_validate_attio,
         brand_color="#2d7ff9",
         logo="attio",
-        managed=False,
+        managed=True,
         account_field="account_id",
     ),
     ConnectorDescriptor(
@@ -1452,7 +1452,7 @@ def register_descriptor(descriptor: ConnectorDescriptor) -> None:
 
 
 # Experimental connectors live in a separate package so release builds can exclude the code
-# entirely (see packaging/tonworker-server.spec). When the package is absent this is a no-op.
+# entirely (see packaging/openworker-server.spec). When the package is absent this is a no-op.
 try:
     from .experimental import EXPERIMENTAL_DESCRIPTORS as _EXPERIMENTAL
 except ImportError:

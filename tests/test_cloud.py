@@ -1,4 +1,4 @@
-"""TonWorker Cloud integration: sign-in, managed connect callback, refresh.
+"""OpenWorker Cloud integration: sign-in, managed connect callback, refresh.
 
 Everything is offline: Auth0 and the cloud broker are stubbed at the httpx
 boundary. The invariants under test are the product promises — manual paste
@@ -7,10 +7,6 @@ manual profiles are never touched by cloud refresh.
 """
 
 from __future__ import annotations
-
-import pytest
-
-pytestmark = pytest.mark.skip(reason="TonWorker Cloud / relay removed in this fork")
 
 import time
 import urllib.parse

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import {
   disconnectConnector,
+  getCloudStatus,
   getConnectors,
   getSlackStatus,
+  type CloudStatus,
   type Connector,
   type SlackStatus,
 } from "../../api";
 import { ConnectorBadge } from "../../connectors/ConnectorIcon";
-import { useI18n } from "../../i18n/react";
 import { AllowlistBlock, ConnectorTools, ListeningSessionsBlock, UnauthorizedBlock } from "../ManageTabs";
 import { AccountsDetail } from "./AccountsDetail";
 import { AvailableDetail } from "./AvailableDetail";
@@ -26,7 +27,8 @@ import { GRP } from "./ui";
 
 export interface DetailProps {
   c: Connector;
-  slack: SlackStatus | null; // live Slack token health for legacy relay workspaces
+  cloud: CloudStatus | null;
+  slack: SlackStatus | null; // live Slack health (relay/sign-in/tokens); null elsewhere
   onChanged: () => void;
 }
 
@@ -48,30 +50,22 @@ const DETAIL_PAGES: Record<string, (p: DetailProps) => JSX.Element> = {
 };
 
 export function ConnectorsSection() {
-  const { t } = useI18n();
   const [detail, setDetail] = useState<string | null>(null);
   const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [cloud, setCloud] = useState<CloudStatus | null>(null);
   const [slack, setSlack] = useState<SlackStatus | null>(null);
-  // 区分「真的没有连接器」和「后端挂了 / 鉴权失败」——后者以前被 catch 成空数组，看起来像目录被清空
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = () => {
-    getConnectors()
-      .then((list) => {
-        setConnectors(list);
-        setLoadError(null);
-      })
-      .catch((err) => {
-        setConnectors([]);
-        setLoadError(err instanceof Error ? err.message : String(err));
-      });
+    getConnectors().then(setConnectors).catch(() => setConnectors([]));
+    getCloudStatus().then(setCloud).catch(() => setCloud(null));
     getSlackStatus().then(setSlack).catch(() => setSlack(null));
   };
   useEffect(() => {
     refresh();
-    // Poll: recent senders/parked arrive over time; manual connects finish via the form.
-    const timer = setInterval(refresh, 5000);
-    return () => clearInterval(timer);
+    // Poll: recent senders/parked arrive over time; sign-in + managed connects finish
+    // in the system browser and surface on the next tick.
+    const t = setInterval(refresh, 5000);
+    return () => clearInterval(t);
   }, []);
 
   if (detail) {
@@ -84,19 +78,20 @@ export function ConnectorsSection() {
           data-testid="connectors-breadcrumb"
           onClick={() => setDetail(null)}
         >
-          ‹ {t("Connectors")}
+          ‹ Connectors
         </button>
         {!c ? (
-          <div className="text-[13px] text-muted">{t("Loading…")}</div>
+          <div className="text-[13px] text-muted">Loading…</div>
         ) : !c.connected ? (
           /* Pre-connect page (§38). When a connect completes, the poll flips
              c.connected and this same route re-renders as the connected page. */
-          <AvailableDetail c={c} onChanged={refresh} />
+          <AvailableDetail c={c} cloud={cloud} onChanged={refresh} />
         ) : Page ? (
-          <Page c={c} slack={slack} onChanged={refresh} />
+          <Page c={c} cloud={cloud} slack={slack} onChanged={refresh} />
         ) : (
           <GenericDetail
             c={c}
+            cloud={cloud}
             slack={slack}
             onChanged={refresh}
             onGone={() => setDetail(null)}
@@ -107,22 +102,13 @@ export function ConnectorsSection() {
   }
 
   return (
-    <>
-      {loadError && (
-        <div
-          className="mb-3 rounded-lg border border-line bg-panel/60 px-3.5 py-2.5 text-[12.5px] text-muted"
-          data-testid="connectors-load-error"
-        >
-          {t("Couldn't load connectors — is the local server running?")}
-          <span className="block text-[11.5px] text-faint mt-1 truncate">{loadError}</span>
-        </div>
-      )}
-      <ConnectorsList
-        connectors={connectors}
-        onOpen={setDetail}
-        onChanged={refresh}
-      />
-    </>
+    <ConnectorsList
+      connectors={connectors}
+      cloud={cloud}
+      slack={slack}
+      onOpen={setDetail}
+      onChanged={refresh}
+    />
   );
 }
 
@@ -131,10 +117,11 @@ export function ConnectorsSection() {
 // (Slack/Gmail/HubSpot) replace this one connector at a time.
 function GenericDetail({
   c,
+  cloud: _cloud,
+  slack: _slack,
   onChanged,
   onGone,
 }: DetailProps & { onGone: () => void }) {
-  const { t } = useI18n();
   return (
     <div>
       <div className="flex items-center gap-3.5 mb-5">
@@ -143,7 +130,7 @@ function GenericDetail({
           <h2 className="text-[20px] font-semibold tracking-tight leading-tight">{c.title}</h2>
           <div className="text-[12.5px] text-muted flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-ok" />
-            {c.account || (c.auth === "none" ? t("Built in") : t("Connected"))}
+            {c.account || (c.auth === "none" ? "Built in" : "Connected")}
           </div>
         </div>
         {c.auth !== "none" && (
@@ -155,7 +142,7 @@ function GenericDetail({
               onGone();
             }}
           >
-            {t("Disconnect")}
+            Disconnect
           </button>
         )}
       </div>
@@ -168,6 +155,8 @@ function GenericDetail({
         <div className={GRP + " mt-4"}>
           <AllowlistBlock c={c} onChanged={onChanged} />
           <UnauthorizedBlock c={c} onChanged={onChanged} />
+          {/* Channel subscriptions are a chat-platform concept — GitHub is two_way via the
+              relay (inbound mentions) but has no channels. */}
           {c.channels && <ListeningSessionsBlock c={c} />}
         </div>
       )}

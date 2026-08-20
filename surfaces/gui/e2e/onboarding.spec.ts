@@ -47,7 +47,7 @@ test("key form: Test verifies, saves, and returns to the gallery with the ✓", 
 
   await page.getByTestId("ob-provider-zai").click();
   // The header stays put (§39 fixed frame): the welcome headline is still on screen.
-  await expect(page.getByRole("heading", { name: "Welcome to TonWorker" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome to OpenWorker" })).toBeVisible();
   // Optional endpoint is a quiet disclosure with no explainer copy (owner call 2026-07-18).
   await expect(page.getByTestId("ob-field-base_url")).toHaveCount(0);
   await page.getByTestId("ob-endpoint-link").click();
@@ -120,8 +120,7 @@ test("tools page: sign-in morphs the page into the connector gallery; a card con
   // (zero layout shift), and every row grows its Connect pill.
   await page.getByTestId("ob-cloud-signin").click();
   await expect(page.getByTestId("ob-tools-signedin")).toBeVisible({ timeout: 10_000 });
-  // 直撇号 U+0027：与 Onboarding.tsx / i18n key 一致（上游曾用 &rsquo; 弯撇号）
-  await expect(page.getByTestId("ob-tools-signedin")).toContainText("You're signed in");
+  await expect(page.getByTestId("ob-tools-signedin")).toContainText("You’re signed in");
   await expect(
     page.getByTestId("ob-tool-attio").getByRole("button", { name: "Connect" }),
   ).toBeVisible();

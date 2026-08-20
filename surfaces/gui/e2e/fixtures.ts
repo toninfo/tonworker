@@ -33,7 +33,7 @@ const SETTINGS = {
   experimental_connectors: false,
   surfaces: { cowork: true, chat: false, code: true },
   nav_layout: "grouped",
-  scratch_base: "~/TonWorker",
+  scratch_base: "~/OpenWorker",
   secrets_path: "/Users/test/.config/coworker/secrets.json",
   sessions_peek: 5,
   // Token savings (PDF attachments): 2-page limit keeps the composer threshold test's
@@ -45,6 +45,10 @@ const SETTINGS = {
   model_labels: {
     "anthropic:claude-opus-4-8": "Claude Opus 4.8 · Anthropic",
     "zai:glm-5.2": "GLM-5.2 · Z AI",
+    "ark:dola-seed-evolving-latest-version": "Dola Seed Evolving · BytePlus Ark",
+    "ark:dola-seed-2-1-turbo-260628": "Dola Seed 2.1 Turbo · BytePlus Ark",
+    "ark-agent-plan-cn:doubao-seed-evolving": "Doubao Seed Evolving · Volcengine Agent Plan",
+    "ark-agent-plan-cn:doubao-seed-2.1-turbo": "Doubao Seed 2.1 Turbo · Volcengine Agent Plan",
   },
   // Context windows (subset — mirrors /v1/settings.model_context_windows); drives the
   // composer usage chip's context-fill meter.
@@ -55,7 +59,7 @@ const SETTINGS = {
 
 const PERSONAS = {
   personas: [
-    { id: "cowork", name: "TonWorker", icon: "cowork", tagline: "Produce a deliverable — research, analysis, scripts", needs_workspace: true, builtin: true, family: "knowledge", workspace: "deliverable", tools: ["files", "search"], enabled: true, surfaced: true, default: true },
+    { id: "cowork", name: "OpenWorker", icon: "cowork", tagline: "Produce a deliverable — research, analysis, scripts", needs_workspace: true, builtin: true, family: "knowledge", workspace: "deliverable", tools: ["files", "search"], enabled: true, surfaced: true, default: true },
     { id: "code", name: "Code", icon: "code", tagline: "Work in a codebase — files, git, shell", needs_workspace: true, builtin: true, family: "code", workspace: "git", tools: ["code_files", "git"], enabled: true, surfaced: true, default: false },
     { id: "chat", name: "Chat", icon: "chat", tagline: "Quick questions — no workspace", needs_workspace: false, builtin: true, family: "knowledge", workspace: "none", tools: [], enabled: true, surfaced: false, default: false },
     { id: "ops", name: "Ops Coworker", icon: "wrench", tagline: "Operate and investigate — runbooks, logs, infrastructure", needs_workspace: true, builtin: true, family: "knowledge", workspace: "deliverable", tools: ["files", "shell"], enabled: true, surfaced: true, default: false },
@@ -69,7 +73,7 @@ const PERSONAS = {
 const PINNED_SESSION = {
   session_id: "pinned-cowork-1",
   title: "Draft the launch note",
-  workspace: "/Users/test/TonWorker/launch-note",
+  workspace: "/Users/test/OpenWorker/launch-note",
   agent: "cowork",
   model: "anthropic:claude-opus-4-8",
   mode: "interactive",
@@ -106,7 +110,7 @@ const EXTRA_SESSIONS = Array.from({ length: 7 }, (_, i) => ({
 const OPS_SESSION = {
   session_id: "ops-1",
   title: "Ops triage",
-  workspace: "/Users/test/TonWorker/ops-triage",
+  workspace: "/Users/test/OpenWorker/ops-triage",
   agent: "ops",
   model: "anthropic:claude-opus-4-8",
   mode: "interactive",
@@ -223,7 +227,7 @@ const GALLERY_PERSONAS = [
     description: "A sales-focused coworker.",
     family: "knowledge",
     workspace: "deliverable",
-    publisher: "TonWorker",
+    publisher: "OpenWorker",
     recommended_connectors: ["hubspot", "gmail"],
     risk_summary: "Declarative manifest; no executable code.",
     featured: true,
@@ -237,7 +241,7 @@ const GALLERY_PERSONAS = [
     description: "A recruiting coworker.",
     family: "knowledge",
     workspace: "deliverable",
-    publisher: "TonWorker",
+    publisher: "OpenWorker",
     recommended_connectors: ["gmail"],
     risk_summary: "Declarative manifest; no executable code.",
     featured: false,
@@ -248,7 +252,7 @@ const GALLERY_PERSONAS = [
 // `default_connections` as arrays, so these must be present (not the catch-all {}).
 const PERSONA_DETAIL = {
   id: "cowork",
-  name: "TonWorker",
+  name: "OpenWorker",
   icon: "cowork",
   tagline: "Produce a deliverable — research, analysis, scripts",
   description: "",
@@ -326,7 +330,7 @@ const AUTOMATION_RUNS = [
   },
 ];
 
-const PRIMARY_ROOT = { path: "/Users/test/TonWorker/launch-note", writable: true, label: "scratch", primary: true, exists: true };
+const PRIMARY_ROOT = { path: "/Users/test/OpenWorker/launch-note", writable: true, label: "scratch", primary: true, exists: true };
 const baseName = (p: string) => p.split("/").filter(Boolean).pop() || p;
 
 const PROVIDERS = [
@@ -336,6 +340,10 @@ const PROVIDERS = [
   { name: "anthropic", title: "Claude (Anthropic)", needs_key: true, fields: [{ key: "api_key", label: "API key", secret: true, required: true, help: "", placeholder: "sk-…" }], configured: true, values: {}, suggested_models: ["claude-opus-4-8"], key_set_at: null, last_used_at: null },
   // zai: an OpenAI-compatible vendor — unconfigured, with a prefilled editable endpoint + blurb.
   { name: "zai", title: "Z AI (GLM)", needs_key: true, blurb: "Uses Z AI's OpenAI-compatible API — the endpoint is prefilled, just add your key.", fields: [{ key: "api_key", label: "Z AI API key", secret: true, required: true, help: "", placeholder: "" }, { key: "base_url", label: "Endpoint", secret: false, required: false, help: "Prefilled with Z AI's international endpoint.", placeholder: "https://api.z.ai/api/paas/v4", default: "https://api.z.ai/api/paas/v4" }], configured: false, values: {}, suggested_models: ["glm-5.2"], key_set_at: null, last_used_at: null },
+  // Ark uses two provider identities: BytePlus pay-as-you-go and Volcengine Agent Plan CN
+  // have independent credentials, endpoints, and strict curated model lists.
+  { name: "ark", title: "BytePlus Ark", needs_key: true, blurb: "Uses BytePlus Ark's OpenAI-compatible Responses API — the endpoint is prefilled, just add your key.", fields: [{ key: "api_key", label: "BytePlus Ark API key", secret: true, required: true, help: "", placeholder: "" }, { key: "base_url", label: "Endpoint", secret: false, required: false, help: "BytePlus Ark's Asia Pacific endpoint.", placeholder: "https://ark.ap-southeast.bytepluses.com/api/v3", default: "https://ark.ap-southeast.bytepluses.com/api/v3" }], configured: false, values: {}, suggested_models: ["dola-seed-evolving-latest-version", "dola-seed-2-1-turbo-260628"], key_set_at: null, last_used_at: null },
+  { name: "ark-agent-plan-cn", title: "Volcengine Ark Agent Plan", needs_key: true, blurb: "Uses Volcengine Ark Agent Plan's OpenAI-compatible Responses API — the endpoint is prefilled, just add your key.", fields: [{ key: "api_key", label: "Volcengine Ark Agent Plan API key", secret: true, required: true, help: "", placeholder: "" }, { key: "base_url", label: "Endpoint", secret: false, required: false, help: "Volcengine Ark Agent Plan's China (Beijing) endpoint.", placeholder: "https://ark.cn-beijing.volces.com/api/plan/v3", default: "https://ark.cn-beijing.volces.com/api/plan/v3" }], configured: false, values: {}, suggested_models: ["doubao-seed-evolving", "doubao-seed-2.1-turbo"], key_set_at: null, last_used_at: null },
   // ollama: keyless local provider — "configured" without proving anything runs; the
   // onboarding gallery shows "No key needed" and its form is endpoint + Detect (§39).
   { name: "ollama", title: "Ollama (local models)", needs_key: false, fields: [{ key: "base_url", label: "Endpoint", secret: false, required: false, help: "", placeholder: "http://127.0.0.1:11434", default: "http://127.0.0.1:11434" }], configured: true, values: {}, suggested_models: ["qwen3-coder:30b"], key_set_at: null, last_used_at: null },
@@ -1244,7 +1252,7 @@ export async function mockApi(page: import("@playwright/test").Page) {
       });
     if (p.endsWith("/v1/cloud/status")) return json({ ...CLOUD_STATE });
     if (p.endsWith("/v1/cloud/login") && m === "POST") {
-      Object.assign(CLOUD_STATE, { signed_in: true, account: "rohit@tonworker.test", user_id: "usr_e2e" });
+      Object.assign(CLOUD_STATE, { signed_in: true, account: "rohit@openworker.com", user_id: "usr_e2e" });
       return json({ ok: true });
     }
     if (p.endsWith("/v1/cloud/telemetry") && m === "POST") {
@@ -1303,8 +1311,8 @@ export async function mockApi(page: import("@playwright/test").Page) {
       // Outlook managed connect = add the next mailbox (email-keyed accounts).
       if (p.includes("/connectors/outlook/")) {
         outlookState.accounts.push({
-          account_id: `mbx${outlookState.accounts.length + 1}@tonworker.test`,
-          name: `mbx${outlookState.accounts.length + 1}@tonworker.test`,
+          account_id: `mbx${outlookState.accounts.length + 1}@openworker.com`,
+          name: `mbx${outlookState.accounts.length + 1}@openworker.com`,
           default: outlookState.accounts.length === 0,
           managed: true,
         });
@@ -1598,8 +1606,6 @@ export async function mockApi(page: import("@playwright/test").Page) {
 // A `test` whose page has the API mocked before navigation.
 export const test = base.extend({
   page: async ({ page }, use) => {
-    // E2E 断言英文文案；锁定 en，避免默认中文界面导致选择器失败
-    await page.addInitScript(() => localStorage.setItem("tonworker.locale", "en"));
     await mockApi(page);
     await use(page);
   },

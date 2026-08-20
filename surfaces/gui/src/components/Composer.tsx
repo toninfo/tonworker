@@ -3,7 +3,6 @@ import type { Attachment, SessionUsage } from "../types";
 import { isPdfFile, readFile } from "../attach";
 import { getSettings, inspectPdf, sessionSkills, type SessionSkillRow } from "../api";
 import { formatTokens, totalTokens } from "../usage";
-import { useI18n } from "../i18n/react";
 import { Dropdown, type Option } from "./Dropdown";
 import { Icon } from "./Icon";
 import { Toggle } from "./Toggle";
@@ -21,7 +20,6 @@ import {
 // polished enough to ship, and Custom (config.toml auto-allow rules) is a power-user mode
 // with no in-app explanation. The server still honors both — a session already in one of
 // those modes keeps working; the picker just doesn't offer them.
-// label/description 为英文源 key，渲染时经 t() 汉化。
 const PERMISSION_OPTIONS: Option[] = [
   { value: "discuss", label: "Discuss", description: "Chat and explore — no edits or commands" },
   { value: "interactive", label: "Ask for approval", description: "Ask before edits and commands" },
@@ -94,7 +92,6 @@ interface Props {
 }
 
 export function Composer(props: Props) {
-  const { t } = useI18n();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   // "/" force-run (SKILLS-SPEC §4.1 #3). The popup derives from the draft: it is open while
@@ -140,8 +137,7 @@ export function Composer(props: Props) {
   const [dragging, setDragging] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [dictation, setDictation] = useState<DictationStatus | null>(null);
-  // 内部状态机用英文码；展示文案走 t()，避免与 locale 绑定。
-  const [dictationBusy, setDictationBusy] = useState<"transcribing" | "starting" | null>(null);
+  const [dictationBusy, setDictationBusy] = useState<string | null>(null);
   const [dictationError, setDictationError] = useState<string | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [attachNotice, setAttachNotice] = useState<string | null>(null);
@@ -275,10 +271,7 @@ export function Composer(props: Props) {
     for (const file of list) {
       if (isPdfFile(file) && file.size > maxMb * 1024 * 1024) {
         showAttachNotice(
-          t(
-            "{name} skipped — {size} MB is over your {maxMb} MB limit (Settings → Token savings)",
-            { name: file.name, size: (file.size / 1024 / 1024).toFixed(1), maxMb },
-          ),
+          `${file.name} skipped — ${(file.size / 1024 / 1024).toFixed(1)} MB is over your ${maxMb} MB limit (Settings → Token savings)`,
         );
         continue;
       }
@@ -291,20 +284,12 @@ export function Composer(props: Props) {
         const info = await inspectPdf(a.data_url).catch(() => null);
         if (info?.ok && (info.pages ?? 0) > maxPages) {
           showAttachNotice(
-            t(
-              "{name} skipped — {pages} pages is over your {maxPages}-page limit (Settings → Token savings)",
-              { name: a.name, pages: info.pages ?? 0, maxPages },
-            ),
+            `${a.name} skipped — ${info.pages} pages is over your ${maxPages}-page limit (Settings → Token savings)`,
           );
           continue;
         }
         if (info && !info.ok) {
-          showAttachNotice(
-            t("{name} skipped — {error}", {
-              name: a.name,
-              error: info.error || t("could not read PDF"),
-            }),
-          );
+          showAttachNotice(`${a.name} skipped — ${info.error || "could not read PDF"}`);
           continue;
         }
       }
@@ -330,10 +315,9 @@ export function Composer(props: Props) {
     // The visible "/name " prefix is UI state, not message text — strip it for the send;
     // the skill rides as its own field.
     const skill = prefixIntact ? pendingSkill!.name : undefined;
-    // 避免与 useI18n 的 t 撞名
-    const body = (skill ? text.slice(skill.length + 1) : text).trim();
+    const t = (skill ? text.slice(skill.length + 1) : text).trim();
     if (
-      (!body && attachments.length === 0 && !skill) ||
+      (!t && attachments.length === 0 && !skill) ||
       props.running ||
       dictation?.recording ||
       dictationBusy
@@ -344,7 +328,7 @@ export function Composer(props: Props) {
       props.onConnectModel?.();
       return;
     }
-    props.onSend(body, attachments, skill);
+    props.onSend(t, attachments, skill);
     setText("");
     setAttachments([]);
     setPendingSkill(null);
@@ -396,7 +380,7 @@ export function Composer(props: Props) {
     setDictationError(null);
     try {
       if (dictation?.recording) {
-        setDictationBusy("transcribing");
+        setDictationBusy("Transcribing…");
         const transcript = await stopDictation();
         if (transcript === null) throw new Error("Could not transcribe your recording.");
         if (transcript.trim()) {
@@ -413,28 +397,18 @@ export function Composer(props: Props) {
         props.onConfigureVoiceInput?.();
         return;
       }
-      setDictationBusy("starting");
+      setDictationBusy("Starting microphone…");
       const recording = await startDictation();
       if (!recording?.recording) throw new Error("Could not start the microphone.");
       setDictation(recording);
     } catch (error) {
-      // Error.message 即英文源 key，经 t() 展示
-      setDictationError(
-        error instanceof Error ? t(error.message) : t("Voice dictation is unavailable."),
-      );
+      setDictationError(error instanceof Error ? error.message : "Voice dictation is unavailable.");
       const status = await getDictationStatus();
       if (status) setDictation(status);
     } finally {
       setDictationBusy(null);
     }
   };
-
-  const dictationBusyLabel =
-    dictationBusy === "transcribing"
-      ? t("Transcribing…")
-      : dictationBusy === "starting"
-        ? t("Starting microphone…")
-        : null;
 
   const modelsLoaded = !!(props.models && props.models.length);
   const modelOptions: Option[] = Array.from(
@@ -473,7 +447,7 @@ export function Composer(props: Props) {
           <button
             className="shrink-0 opacity-60 hover:opacity-100"
             onClick={() => setAttachNotice(null)}
-            title={t("Dismiss")}
+            title="Dismiss"
           >
             ✕
           </button>
@@ -508,11 +482,11 @@ export function Composer(props: Props) {
         {/* "/" force-run popup — in-flow above the textarea; rows are the session's
             effective menu only (muted/disabled skills never appear). */}
         {slashQuery !== null && (
-          <div className="px-2 pt-2" data-testid="skill-popup" role="listbox" aria-label={t("Skills")}>
+          <div className="px-2 pt-2" data-testid="skill-popup" role="listbox" aria-label="Skills">
             {slashSkills === null ? (
-              <div className="px-2 py-1.5 text-[12px] text-faint">{t("Loading skills…")}</div>
+              <div className="px-2 py-1.5 text-[12px] text-faint">Loading skills…</div>
             ) : slashMatches.length === 0 ? (
-              <div className="px-2 py-1.5 text-[12px] text-faint">{t("No matching skills.")}</div>
+              <div className="px-2 py-1.5 text-[12px] text-faint">No matching skills.</div>
             ) : (
               slashMatches.map((s, i) => (
                 <button
@@ -539,7 +513,7 @@ export function Composer(props: Props) {
         <textarea
           ref={textareaRef}
           className="w-full block px-3.5 pt-3.5 pb-1.5 text-[14.5px]"
-          placeholder={props.placeholder || t("Ask the coworker…  (drop or paste files)")}
+          placeholder={props.placeholder || "Ask the coworker…  (drop or paste files)"}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKey}
@@ -553,8 +527,8 @@ export function Composer(props: Props) {
           <div className="relative">
             <button
               className={iconBtn + (attachMenuOpen ? " bg-paper text-ink" : "")}
-              title={t("Attach")}
-              aria-label={t("Attach")}
+              title="Attach"
+              aria-label="Attach"
               onClick={() => setAttachMenuOpen((v) => !v)}
             >
               <Icon name="plus" size={17} />
@@ -563,11 +537,11 @@ export function Composer(props: Props) {
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setAttachMenuOpen(false)} />
                 <div className="absolute z-40 bottom-full mb-1 left-0 min-w-[180px] rounded-xl border border-line bg-panel shadow-2xl py-1.5">
-                  {attachItem("image", t("Photo or image"), () => pickFiles("image/*"))}
-                  {attachItem("file", t("PDF"), () => pickFiles("application/pdf,.pdf"))}
+                  {attachItem("image", "Photo or image", () => pickFiles("image/*"))}
+                  {attachItem("file", "PDF", () => pickFiles("application/pdf,.pdf"))}
                   {attachItem(
                     "fileCode",
-                    t("Other files"),
+                    "Other files",
                     () => pickFiles("text/*,.md,.csv,.json,.yaml,.yml,.log,.py,.ts,.tsx,.js,.rs,.go,.toml"),
                   )}
                 </div>
@@ -607,9 +581,7 @@ export function Composer(props: Props) {
             />
           ) : null}
 
-          {dictationBusy === "transcribing" && (
-            <span className="text-[11.5px] text-accent">{t("Transcribing…")}</span>
-          )}
+          {dictationBusy === "Transcribing…" && <span className="text-[11.5px] text-accent">Transcribing…</span>}
 
           <span className="ml-auto" />
 
@@ -633,10 +605,10 @@ export function Composer(props: Props) {
             <button
               className="pill model-warn chip"
               onClick={() => props.onConnectModel?.()}
-              title={t("Connect a model")}
-              aria-label={t("No model connected — connect a model")}
+              title="Connect a model"
+              aria-label="No model connected — connect a model"
             >
-              <span className="pill-label">{t("No model")}</span>
+              <span className="pill-label">No model</span>
               <span className="model-warn-ico" aria-hidden>⚠</span>
             </button>
           ) : modelsLoaded ? (
@@ -646,9 +618,9 @@ export function Composer(props: Props) {
               className="pill chip text-faint cursor-default"
               disabled
               data-testid="models-loading"
-              title={t("Fetching the model list from the server")}
+              title="Fetching the model list from the server"
             >
-              <span className="pill-label">{t("Loading models…")}</span>
+              <span className="pill-label">Loading models…</span>
             </button>
           ))}
 
@@ -664,20 +636,14 @@ export function Composer(props: Props) {
               onClick={() => void toggleDictation()}
               disabled={!!dictationBusy}
               title={
-                dictationBusyLabel ||
+                dictationBusy ||
                 (dictation?.recording
-                  ? t("Stop recording and transcribe")
+                  ? "Stop recording and transcribe"
                   : voiceReady
-                    ? t("Start local voice dictation")
-                    : t("Configure Voice Input in Settings"))
+                    ? "Start local voice dictation"
+                    : "Configure Voice Input in Settings")
               }
-              aria-label={
-                dictation?.recording
-                  ? t("Stop dictation")
-                  : voiceReady
-                    ? t("Start dictation")
-                    : t("Configure Voice Input in Settings")
-              }
+              aria-label={dictation?.recording ? "Stop dictation" : voiceReady ? "Start dictation" : "Configure Voice Input in Settings"}
               aria-disabled={!voiceReady && !dictation?.recording}
             >
               <Icon name={dictation?.recording ? "stop" : "mic"} size={16} />
@@ -687,20 +653,20 @@ export function Composer(props: Props) {
           {/* send / stop */}
           {props.running ? (
             <button className="btn danger" onClick={props.onInterrupt}>
-              {t("⏹ Stop")}
+              ⏹ Stop
             </button>
           ) : (
             <button
               className={
                 "w-7 h-7 rounded-full grid place-items-center shrink-0 transition-colors " +
                 (hasContent && props.connected && !dictation?.recording && !dictationBusy
-                  ? "border border-accent text-accent bg-panel hover:bg-accentSoft"
+                  ? "bg-accent text-white hover:brightness-105"
                   : "bg-paper border border-line text-faint")
               }
               onClick={submit}
               disabled={!props.connected || !!dictation?.recording || !!dictationBusy}
-              title={needsModel ? t("Connect a model to send") : undefined}
-              aria-label={t("Send")}
+              title={needsModel ? "Connect a model to send" : undefined}
+              aria-label="Send"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 19V5M5 12l7-7 7 7" />
@@ -710,9 +676,7 @@ export function Composer(props: Props) {
         </div>
       </div>
       <span className="sr-only" role="status" aria-live="polite">
-        {dictation?.recording
-          ? t("Listening, {time}", { time: recordingTime })
-          : dictationBusyLabel || ""}
+        {dictation?.recording ? `Listening, ${recordingTime}` : dictationBusy || ""}
       </span>
     </div>
   );
@@ -735,7 +699,6 @@ function UsageChip({
   model: string;
   modelLabels?: Record<string, string>;
 }) {
-  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const total = totalTokens(usage);
   const pct = contextWindow
@@ -744,7 +707,7 @@ function UsageChip({
   // Settings can hide the bar; without a known window there is nothing to fill either.
   const showBar = pct !== null && contextBar === true;
   const labelFor = (id: string) =>
-    id === "unknown" ? t("Unknown model") : modelLabels?.[id] || shortModel(id);
+    id === "unknown" ? "Unknown model" : modelLabels?.[id] || shortModel(id);
   // One field per line, session-summed (owner ask 2026-07-28). Values are cumulative
   // across the whole session, never just the last turn; "Input" is the fresh
   // (uncached) share — the cached share sits in the cache rows at its own price.
@@ -761,14 +724,11 @@ function UsageChip({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={t("Token usage")}
+        aria-label="Token usage"
         title={
           showBar
-            ? t("Context window {pct}% full · {tokens} tokens this session", {
-                pct: pct as number,
-                tokens: formatTokens(total),
-              })
-            : t("Token usage this session: {tokens}", { tokens: formatTokens(total) })
+            ? `Context window ${pct}% full · ${formatTokens(total)} tokens this session`
+            : `Token usage this session: ${formatTokens(total)}`
         }
         data-testid="usage-chip"
       >
@@ -797,7 +757,7 @@ function UsageChip({
             {contextWindow ? (
               <div className="mb-2.5">
                 <div className="text-[10.5px] uppercase tracking-[0.06em] text-faint font-semibold mb-1">
-                  {t("Context window")}
+                  Context window
                 </div>
                 <div className="h-1.5 rounded-full bg-line overflow-hidden">
                   <div
@@ -806,23 +766,19 @@ function UsageChip({
                   />
                 </div>
                 <div className="mt-1 text-[11.5px] text-muted tabular-nums">
-                  {t("{used} of {total} · {pct}%", {
-                    used: formatTokens(usage.context),
-                    total: formatTokens(contextWindow),
-                    pct: pct as number,
-                  })}
+                  {formatTokens(usage.context)} of {formatTokens(contextWindow)} · {pct}%
                 </div>
               </div>
             ) : usage.context > 0 ? (
               <div className="mb-2.5 text-[11.5px] text-muted tabular-nums">
-                {t("In context now: {tokens} tokens", { tokens: formatTokens(usage.context) })}
+                In context now: {formatTokens(usage.context)} tokens
               </div>
             ) : null}
             <div className="text-[10.5px] uppercase tracking-[0.06em] text-faint font-semibold mb-1">
-              {t("Session totals")}
+              Session totals
             </div>
             <div className="flex flex-col gap-1.5">
-              {Object.entries(usage.byModel).map(([id, row]) => (
+              {Object.entries(usage.byModel).map(([id, t]) => (
                 <div key={id}>
                   <div className="text-[12px] text-ink font-medium truncate" title={id}>
                     {labelFor(id)}
@@ -832,30 +788,28 @@ function UsageChip({
                       read as components: uncached + cache reads + cache writes = total.
                       Without one (Ollama, compat vendors), plain "Input" says it all. */}
                   <div className="mt-0.5 flex flex-col gap-0.5">
-                    {row.cache_read + row.cache_write > 0 ? (
+                    {t.cache_read + t.cache_write > 0 ? (
                       <>
-                        {stat(t("Uncached input"), row.input)}
-                        {stat(t("Cache reads"), row.cache_read)}
-                        {stat(t("Cache writes"), row.cache_write)}
-                        {stat(t("Total input"), row.input + row.cache_read + row.cache_write)}
+                        {stat("Uncached input", t.input)}
+                        {stat("Cache reads", t.cache_read)}
+                        {stat("Cache writes", t.cache_write)}
+                        {stat("Total input", t.input + t.cache_read + t.cache_write)}
                       </>
                     ) : (
-                      stat(t("Input"), row.input)
+                      stat("Input", t.input)
                     )}
-                    {stat(t("Output"), row.output)}
+                    {stat("Output", t.output)}
                   </div>
                 </div>
               ))}
             </div>
             <div className="mt-2 pt-2 border-t border-line flex items-baseline justify-between text-[11.5px]">
-              <span className="text-faint">{t("Total")}</span>
-              <span className="text-ink tabular-nums">
-                {t("{tokens} tokens", { tokens: formatTokens(total) })}
-              </span>
+              <span className="text-faint">Total</span>
+              <span className="text-ink tabular-nums">{formatTokens(total)} tokens</span>
             </div>
             {model && !modelLabels?.[model] && contextWindow === undefined && (
               <div className="mt-1 text-[10.5px] text-faint leading-snug">
-                {t("Context meter unavailable for custom models.")}
+                Context meter unavailable for custom models.
               </div>
             )}
           </div>
@@ -879,10 +833,8 @@ function ModeMenu({
   unattended?: boolean;
   onUnattendedChange?: (on: boolean) => void;
 }) {
-  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const current = PERMISSION_OPTIONS.find((o) => o.value === mode);
-  const currentLabel = current ? t(current.label) : mode;
   return (
     <div className="relative">
       {/* Borderless, and it names the CHOSEN mode (owner ask 2026-07-11, competitor composer
@@ -893,13 +845,13 @@ function ModeMenu({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={t("Mode")}
+        aria-label="Mode"
         title={
-          t("Mode: {label}", { label: currentLabel }) +
-          (unattended ? t(" · approvals go to the Inbox") : "")
+          `Mode: ${current?.label || mode}` +
+          (unattended ? " · approvals go to the Inbox" : "")
         }
       >
-        {currentLabel}
+        {current?.label || mode}
         <Icon name="chevronDown" size={11} className="text-faint" />
       </button>
       {open && (
@@ -924,10 +876,10 @@ function ModeMenu({
                     "text-[13px] " + (o.value === mode ? "font-medium text-accent" : "text-ink")
                   }
                 >
-                  {t(o.label)}
+                  {o.label}
                   {o.value === mode && <span className="ml-1.5">✓</span>}
                 </span>
-                <span className="text-[11px] text-faint leading-snug">{t(o.description!)}</span>
+                <span className="text-[11px] text-faint leading-snug">{o.description}</span>
               </button>
             ))}
             {onUnattendedChange && (
@@ -935,15 +887,15 @@ function ModeMenu({
                 <div className="my-1 border-t border-line" />
                 <div className="flex items-center gap-2 px-2.5 py-1.5">
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] text-ink">{t("Send approvals to Inbox")}</span>
+                    <span className="block text-[13px] text-ink">Send approvals to Inbox</span>
                     <span className="block text-[11px] text-faint leading-snug">
-                      {t("Approvals & questions go to the Inbox; the agent keeps working.")}
+                      Approvals &amp; questions go to the Inbox; the agent keeps working.
                     </span>
                   </span>
                   <Toggle
                     checked={!!unattended}
                     onChange={onUnattendedChange}
-                    title={t("Send approvals to the Inbox")}
+                    title="Send approvals to the Inbox"
                   />
                 </div>
               </>
@@ -968,7 +920,6 @@ function attachItem(icon: "image" | "file" | "fileCode", label: string, onClick:
 }
 
 function AttachChip({ a, onRemove }: { a: Attachment; onRemove: () => void }) {
-  const { t } = useI18n();
   return (
     <div className={"attach-chip" + (a.kind === "image" ? " img" : "")}>
       {a.kind === "image" ? (
@@ -979,7 +930,7 @@ function AttachChip({ a, onRemove }: { a: Attachment; onRemove: () => void }) {
           <span className="attach-name">{a.name}</span>
         </>
       )}
-      <button className="attach-x" onClick={onRemove} title={t("Remove")}>
+      <button className="attach-x" onClick={onRemove} title="Remove">
         ✕
       </button>
     </div>

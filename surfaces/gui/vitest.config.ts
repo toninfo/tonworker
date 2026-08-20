@@ -8,7 +8,5 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
-    // 单测断言英文文案，锁定 en，避免默认 zh 导致大面积失败
-    setupFiles: ["src/i18n/testSetup.ts"],
   },
 });

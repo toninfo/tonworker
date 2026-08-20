@@ -1,11 +1,7 @@
-"""Sidecar loopback routes for TonWorker Cloud: /oauth/callback,
+"""Sidecar loopback routes for OpenWorker Cloud: /oauth/callback,
 /auth/callback, /v1/cloud/*, connect-managed gating."""
 
 from __future__ import annotations
-
-import pytest
-
-pytestmark = pytest.mark.skip(reason="TonWorker Cloud / relay removed in this fork")
 
 import pytest
 from fastapi.testclient import TestClient
@@ -66,7 +62,7 @@ def test_oauth_callback_writes_profile_and_returns_page(client):
     assert resp.status_code == 200
     # §30: the loopback page is a branded card, Title-cased connector name.
     assert "Gmail connected" in resp.text
-    assert "Served locally by TonWorker" in resp.text
+    assert "Served locally by OpenWorker" in resp.text
 
     # Multi-account: the callback lands in gmail:account:<email>; gmail:default
     # is just the default pointer.

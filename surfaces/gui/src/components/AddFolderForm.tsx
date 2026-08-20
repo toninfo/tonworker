@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { chooseFolder } from "../tauri";
-import { useI18n } from "../i18n/react";
 import { Icon } from "./Icon";
 
 // A single "Give access to a folder" affordance. Collapsed it's one button; expanded it's a path
@@ -21,7 +20,6 @@ export function AddFolderForm({
   startOpen?: boolean;
   onDismiss?: () => void;
 }) {
-  const { t } = useI18n();
   const [open, setOpen] = useState(!!startOpen);
   const [path, setPath] = useState("");
   const [writable, setWritable] = useState(false);
@@ -47,7 +45,7 @@ export function AddFolderForm({
   if (!open) {
     return (
       <button className={"addfolder-trigger" + (compact ? " compact" : "")} onClick={() => setOpen(true)}>
-        <Icon name="folderPlus" size={15} /> {t("Give access to a folder")}
+        <Icon name="folderPlus" size={15} /> Give access to a folder
       </button>
     );
   }
@@ -58,7 +56,7 @@ export function AddFolderForm({
         <input
           className="addfolder-path"
           autoFocus
-          placeholder={t("Choose or paste a folder path…")}
+          placeholder="Choose or paste a folder path…"
           value={path}
           spellCheck={false}
           onChange={(e) => setPath(e.target.value)}
@@ -67,21 +65,21 @@ export function AddFolderForm({
             else if (e.key === "Escape") reset();
           }}
         />
-        <button className="btn icon-only" onClick={browse} title={t("Choose location")} aria-label={t("Choose location")}>
+        <button className="btn icon-only" onClick={browse} title="Choose location" aria-label="Choose location">
           <Icon name="folder" size={15} />
         </button>
       </div>
       <div className="addfolder-actions">
-        <label className="addfolder-write" title={t("Off = read-only. Tick to let the agent write here.")}>
+        <label className="addfolder-write" title="Off = read-only. Tick to let the agent write here.">
           <input type="checkbox" checked={writable} onChange={(e) => setWritable(e.target.checked)} />
-          {t("Allow writes")}
+          Allow writes
         </label>
         <span className="spacer" />
         <button className="btn" onClick={reset}>
-          {t("Cancel")}
+          Cancel
         </button>
         <button className="btn primary" disabled={busy || !path.trim()} onClick={submit}>
-          {t("Add")}
+          Add
         </button>
       </div>
     </div>

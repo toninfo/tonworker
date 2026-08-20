@@ -18,7 +18,6 @@ import {
 } from "../api";
 import { ConnectorBadge } from "../connectors/ConnectorIcon";
 import { fullPersonaName, shortPersonaName } from "../personaScope";
-import { useI18n } from "../i18n/react";
 import { Icon } from "./Icon";
 import { PersonaGlyph } from "./personaIcon";
 import { Toggle } from "./Toggle";
@@ -29,7 +28,7 @@ const SEC_H = "text-[11px] uppercase tracking-[0.05em] text-faint font-semibold"
 const TAG_CORE =
   "text-[10px] px-1.5 py-0.5 rounded-full bg-warnSoft/70 text-warnInk border border-warnInk/15";
 const TAG_MCP = "text-[10px] px-1.5 py-0.5 rounded border border-line text-faint";
-import { BTN_ACCENT_MD } from "../ui/accentButtons";
+const BTN_ACCENT = "text-[12px] px-2.5 py-1.5 rounded-lg bg-accent text-white shrink-0";
 const BTN_BORDERED =
   "text-[12px] px-2.5 py-1.5 rounded-lg border border-line bg-paper hover:border-lineStrong shrink-0";
 
@@ -42,7 +41,6 @@ export function PersonaView({
   onBack?: () => void;
   onOpenIntegrations?: () => void;
 }) {
-  const { t } = useI18n();
   const [detail, setDetail] = useState<PersonaDetail | null>(null);
   const [byName, setByName] = useState<ConnectorMap>({});
   const [error, setError] = useState<string | null>(null);
@@ -53,14 +51,14 @@ export function PersonaView({
     setError(null);
     getPersonaDetail(personaId)
       .then((d) => live && setDetail(d))
-      .catch(() => live && setError(t("Could not load this persona.")));
+      .catch(() => live && setError("Could not load this persona."));
     getConnectors()
       .then((list) => live && setByName(indexConnectors(list)))
       .catch(() => {});
     return () => {
       live = false;
     };
-  }, [personaId, t]);
+  }, [personaId]);
 
   const toggleEnabled = async (next: boolean) => {
     setDetail((d) => (d ? { ...d, enabled: next } : d)); // optimistic
@@ -85,12 +83,12 @@ export function PersonaView({
             className="inline-flex items-center gap-1 text-[12.5px] text-muted hover:text-ink"
             onClick={onBack}
           >
-            <Icon name="arrowLeft" size={15} /> {t("Back")}
+            <Icon name="arrowLeft" size={15} /> Back
           </button>
           <span className="text-faint">·</span>
         </>
       )}
-      <span className="text-[13px] font-semibold">{t("Persona")}</span>
+      <span className="text-[13px] font-semibold">Persona</span>
     </div>
   );
 
@@ -98,12 +96,10 @@ export function PersonaView({
     return (
       <main className="flex-1 min-w-0 flex flex-col bg-paper">
         {header}
-        <div className="p-12 text-center text-faint text-[13px]">{error || t("Loading…")}</div>
+        <div className="p-12 text-center text-faint text-[13px]">{error || "Loading…"}</div>
       </main>
     );
   }
-
-  const shortName = shortPersonaName(detail.name, personaId);
 
   return (
     <main className="flex-1 min-w-0 flex flex-col bg-paper">
@@ -122,30 +118,30 @@ export function PersonaView({
               <p className="text-[13px] text-muted mt-0.5">{detail.tagline}</p>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-[12px] text-muted">{detail.enabled ? t("Enabled") : t("Disabled")}</span>
-              <Toggle checked={detail.enabled} onChange={toggleEnabled} title={t("Enable this persona")} />
+              <span className="text-[12px] text-muted">{detail.enabled ? "Enabled" : "Disabled"}</span>
+              <Toggle checked={detail.enabled} onChange={toggleEnabled} title="Enable this persona" />
             </div>
           </header>
 
           {/* about */}
           {detail.description && (
             <section>
-              <div className={`${SEC_H} mb-1.5`}>{t("About")}</div>
+              <div className={`${SEC_H} mb-1.5`}>About</div>
               <p className="text-[14px] leading-relaxed text-ink/90">{detail.description}</p>
             </section>
           )}
 
-          {/* tools — 回调参数勿命名为 t，避免遮蔽 useI18n 的 t */}
+          {/* tools */}
           {detail.tools.length > 0 && (
             <section>
-              <div className={`${SEC_H} mb-2`}>{t("Built-in capabilities")}</div>
+              <div className={`${SEC_H} mb-2`}>Built-in capabilities</div>
               <div className="flex flex-wrap gap-1.5">
-                {detail.tools.map((tool) => (
+                {detail.tools.map((t) => (
                   <span
                     className="px-2 py-1 rounded-md bg-panel border border-line text-[12px] font-mono"
-                    key={tool}
+                    key={t}
                   >
-                    {tool}
+                    {t}
                   </span>
                 ))}
               </div>
@@ -155,11 +151,10 @@ export function PersonaView({
           {/* connections for full benefit (manifest recommends) */}
           {detail.recommends.length > 0 && (
             <section>
-              <div className={`${SEC_H} mb-1`}>{t("Connections for full benefit")}</div>
+              <div className={`${SEC_H} mb-1`}>Connections for full benefit</div>
               <p className="text-[12.5px] text-muted mb-2.5">
-                {t("Declared by the persona — wire {name} into these to unlock its full workflow.", {
-                  name: shortName,
-                })}
+                Declared by the persona — wire {shortPersonaName(detail.name, personaId)} into these
+                to unlock its full workflow.
               </p>
               <div className="rounded-xl2 border border-line overflow-hidden">
                 {detail.recommends.map((r, i) => {
@@ -178,7 +173,7 @@ export function PersonaView({
                           {isMcp ? (
                             <span className={TAG_MCP}>MCP</span>
                           ) : r.tier === "core" ? (
-                            <span className={TAG_CORE}>{t("core")}</span>
+                            <span className={TAG_CORE}>core</span>
                           ) : null}
                         </div>
                         <div className="text-[12px] text-muted">{r.reason}</div>
@@ -186,14 +181,14 @@ export function PersonaView({
                       {r.connected ? (
                         <span className="inline-flex items-center gap-1 text-[11.5px] text-ok shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-                          {t("connected")}
+                          connected
                         </span>
                       ) : (
                         <button
-                          className={r.tier === "core" && !isMcp ? BTN_ACCENT_MD : BTN_BORDERED}
+                          className={r.tier === "core" && !isMcp ? BTN_ACCENT : BTN_BORDERED}
                           onClick={onOpenIntegrations}
                         >
-                          {isMcp ? t("Add") : t("Connect")}
+                          {isMcp ? "Add" : "Connect"}
                         </button>
                       )}
                     </div>
@@ -206,12 +201,10 @@ export function PersonaView({
           {/* persona-default connections (persona → session default) */}
           {detail.default_connections.length > 0 && (
             <section>
-              <div className={`${SEC_H} mb-1`}>{t("New sessions get by default")}</div>
+              <div className={`${SEC_H} mb-1`}>New sessions get by default</div>
               <p className="text-[12.5px] text-muted mb-2.5">
-                {t(
-                  "When you start a {name} session these are enabled automatically. You can still mute any of them per session.",
-                  { name: shortName },
-                )}
+                When you start a {shortPersonaName(detail.name, personaId)} session these are enabled
+                automatically. You can still mute any of them per session.
               </p>
               <div className="space-y-1.5">
                 {detail.default_connections.map((c) => (
@@ -226,17 +219,14 @@ export function PersonaView({
                     <div className="flex-1 text-[13px] font-medium">
                       {labelFor(c.connector, byName)}
                       {!c.connected && (
-                        <span className="text-[11px] text-faint font-normal">
-                          {" "}
-                          · {t("connect to enable")}
-                        </span>
+                        <span className="text-[11px] text-faint font-normal"> · connect to enable</span>
                       )}
                     </div>
                     <Toggle
                       checked={c.enabled}
                       disabled={!c.connected}
                       onChange={(next) => toggleDefault(c.connector, next)}
-                      title={c.connected ? t("On by default for new sessions") : t("Connect this first")}
+                      title={c.connected ? "On by default for new sessions" : "Connect this first"}
                     />
                   </div>
                 ))}
@@ -248,7 +238,7 @@ export function PersonaView({
           <section className="flex flex-wrap gap-x-8 gap-y-2 text-[12.5px]">
             {detail.recommended_models.length > 0 && (
               <div>
-                <span className="text-faint">{t("Models")}</span> ·{" "}
+                <span className="text-faint">Models</span> ·{" "}
                 {detail.recommended_models.map((m, i) => (
                   <span key={m}>
                     <span className="font-mono">{m}</span>
@@ -259,12 +249,12 @@ export function PersonaView({
             )}
             {detail.default_permission_mode && (
               <div>
-                <span className="text-faint">{t("Default mode")}</span> · {detail.default_permission_mode}
+                <span className="text-faint">Default mode</span> · {detail.default_permission_mode}
               </div>
             )}
             {detail.workspace && (
               <div>
-                <span className="text-faint">{t("Workspace")}</span> · {detail.workspace}
+                <span className="text-faint">Workspace</span> · {detail.workspace}
               </div>
             )}
           </section>

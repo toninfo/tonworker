@@ -34,31 +34,3 @@ async def fake_slack(monkeypatch):
         yield fake
     finally:
         await fake.stop()
-
-
-# --- fork: skip managed OAuth / cloud callback tests ---
-_CLOUD_REMOVED_NODEIDS = (
-    "test_managed_callback",
-    "test_managed_connect",
-    "test_account_profile_refreshes_in_place",
-    "test_google_one_click_paused",
-    "test_outlook_managed",
-    "test_google_drive_multi_account_keys_by_account",  # may use managed
-)
-
-def pytest_collection_modifyitems(config, items):
-    import pytest
-    skip = pytest.mark.skip(reason="managed OAuth / cloud callback removed in this fork")
-    for item in items:
-        name = item.nodeid
-        if any(s in name for s in (
-            "test_managed_callback",
-            "test_managed_connect",
-            "test_account_profile_refreshes_in_place",
-            "test_google_one_click_paused",
-            "test_outlook_managed_multi_account",
-            "test_outlook_calendar_tools_hit_the_right_graph_endpoints",
-            "test_google_drive_multi_account_keys_by_email",
-            "test_connectors.py::test_managed",
-        )) or ("test_connectors.py" in name and "managed" in name):
-            item.add_marker(skip)

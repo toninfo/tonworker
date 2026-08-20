@@ -8,10 +8,6 @@ PAT untouched for manual). Hermetic: fake transports, stubbed broker calls.
 
 from __future__ import annotations
 
-import pytest
-
-pytestmark = pytest.mark.skip(reason="TonWorker Cloud / relay removed in this fork")
-
 import asyncio
 import json
 

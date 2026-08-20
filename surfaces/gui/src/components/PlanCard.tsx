@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { Item } from "../types";
-import { useI18n } from "../i18n/react";
 import { Icon } from "./Icon";
 import { Markdown } from "./Markdown";
 
@@ -16,7 +15,6 @@ export function PlanCard({
   item: PlanItem;
   onRespond: (approved: boolean, mode?: string, feedback?: string) => void;
 }) {
-  const { t } = useI18n();
   const [rejecting, setRejecting] = useState(false);
   const [feedback, setFeedback] = useState("");
 
@@ -24,7 +22,7 @@ export function PlanCard({
     <div className="dirreq-card plan-card">
       <div className="dirreq-head">
         <Icon name="sparkle" size={16} className="ico" />
-        <span>{t("The agent proposed a plan")}</span>
+        <span>The agent proposed a plan</span>
       </div>
       <div className="plan-body">
         <Markdown text={item.plan} />
@@ -33,7 +31,7 @@ export function PlanCard({
         <div className="dirreq-actions">
           <input
             className="dirreq-path"
-            placeholder={t("What should change about the plan?")}
+            placeholder="What should change about the plan?"
             value={feedback}
             autoFocus
             onChange={(e) => setFeedback(e.target.value)}
@@ -42,27 +40,27 @@ export function PlanCard({
             }}
           />
           <button className="btn" onClick={() => setRejecting(false)}>
-            {t("Back")}
+            Back
           </button>
           <button
             className="btn primary"
             disabled={!feedback.trim()}
             onClick={() => onRespond(false, undefined, feedback.trim())}
           >
-            {t("Send feedback")}
+            Send feedback
           </button>
         </div>
       ) : (
         <div className="dirreq-actions">
           <button className="btn" onClick={() => setRejecting(true)}>
-            {t("Request changes")}
+            Request changes
           </button>
           <span className="spacer" />
           <button className="btn" onClick={() => onRespond(true, "interactive")}>
-            {t("Approve — ask per step")}
+            Approve — ask per step
           </button>
           <button className="btn primary" onClick={() => onRespond(true, "auto")}>
-            {t("Approve & run")}
+            Approve & run
           </button>
         </div>
       )}
