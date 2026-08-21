@@ -1,23 +1,34 @@
 import { useState } from "react";
 import {
+  connectManaged,
   disconnectAccount,
   setDefaultAccount,
   type AccountRow,
 } from "../../api";
 import { ConnectorBadge } from "../../connectors/ConnectorIcon";
-import { useI18n } from "../../i18n/react";
 import { ConnectSetup } from "../ManageTabs";
 import type { DetailProps } from "./ConnectorsSection";
 import { ToolsDisclosure } from "./ToolsDisclosure";
 import { FOOT, GRP, GRP_H, PILL_ACCENT, ROW, TAG_ACCENT, XBTN } from "./ui";
 
-// Generic multi-account connectors (Notion, Attio, …): Accounts group + manual
-// token form. Managed one-click OAuth is retired.
+// The generic detail page for multi-account connectors on the accounts layer
+// (Notion, Attio, PostHog, Mixpanel, Amplitude, Apollo, Hunter — batch 2).
+// Same grammar as the Calendar page: an Accounts group with a Default badge,
+// make-default, per-account ×. "＋ Add account" launches managed OAuth when
+// the connector has it (and the user is signed in); the manual token form is
+// always available underneath — signed out or in, local-only stays first-class.
 
-export function AccountsDetail({ c, onChanged }: DetailProps) {
-  const { t } = useI18n();
+export function AccountsDetail({ c, cloud, slack: _slack, onChanged }: DetailProps) {
+  const [busy, setBusy] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const accounts = (c.accounts ?? []) as AccountRow[];
+  const canOneClick = c.managed && !!cloud?.signed_in;
+
+  const addManaged = async () => {
+    setBusy(true);
+    await connectManaged(c.name); // completes in the system browser; the section poll picks it up
+    setTimeout(() => setBusy(false), 2500);
+  };
 
   return (
     <div data-testid="accounts-detail">
@@ -32,28 +43,32 @@ export function AccountsDetail({ c, onChanged }: DetailProps) {
               <>
                 <span className="w-2 h-2 rounded-full bg-ok" />
                 <span data-testid="accounts-status">
-                  {accounts.length === 1
-                    ? t("{n} account", { n: accounts.length })
-                    : t("{n} accounts", { n: accounts.length })}
+                  {accounts.length} account{accounts.length === 1 ? "" : "s"}
                 </span>
               </>
             ) : (
-              <span>{t("Not connected")}</span>
+              <span>Not connected</span>
             )}
           </div>
         </div>
         <button
           className={PILL_ACCENT}
           data-testid="add-account-btn"
-          onClick={() => setShowManual((v) => !v)}
+          onClick={() => (canOneClick ? addManaged() : setShowManual((v) => !v))}
+          disabled={busy}
+          title={
+            c.managed && !cloud?.signed_in
+              ? "Sign in to TonWorker Cloud for one-click — or add a token below"
+              : ""
+          }
         >
-          {t("＋ Add account")}
+          {busy ? "Check your browser…" : "＋ Add account"}
         </button>
       </div>
 
       {accounts.length > 0 && (
         <>
-          <div className={GRP_H + " !mt-0"}>{t("Accounts")}</div>
+          <div className={GRP_H + " !mt-0"}>Accounts</div>
           <div className={GRP} data-testid="accounts-group">
             {accounts.map((a) => (
               <Row key={a.account_id} connector={c.name} a={a} onChanged={onChanged} />
@@ -65,12 +80,13 @@ export function AccountsDetail({ c, onChanged }: DetailProps) {
       {(showManual || !c.connected) && (
         <>
           <div className={GRP_H + (accounts.length ? "" : " !mt-0")}>
-            {t("Add an account")}
+            {c.managed ? "Add manually" : "Add an account"}
           </div>
           <div className={GRP} data-testid="accounts-manual-add">
             <div className="px-1.5 py-1">
               <ConnectSetup
                 c={c}
+                cloud={cloud}
                 onConnected={() => {
                   setShowManual(false);
                   onChanged();
@@ -83,7 +99,8 @@ export function AccountsDetail({ c, onChanged }: DetailProps) {
 
       <ToolsDisclosure c={c} onChanged={onChanged} />
       <div className={FOOT + " mt-2"}>
-        {t("Each account stays separate — tool results and approvals name the account they used.")}
+        Each account stays separate — tool results and approvals name the account
+        they used.
       </div>
     </div>
   );
@@ -98,7 +115,6 @@ function Row({
   a: AccountRow;
   onChanged: () => void;
 }) {
-  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   return (
     <div className={ROW} data-testid={`account-${a.account_id}`}>
@@ -109,7 +125,7 @@ function Row({
             {a.account_id}
           </span>
         )}
-        {a.default && <span className={TAG_ACCENT}>{t("Default")}</span>}
+        {a.default && <span className={TAG_ACCENT}>Default</span>}
       </span>
       {!a.default && (
         <button
@@ -120,12 +136,12 @@ function Row({
             onChanged();
           }}
         >
-          {t("Make default")}
+          Make default
         </button>
       )}
       <button
         className={XBTN}
-        title={t("Disconnect this account")}
+        title="Disconnect this account"
         data-testid={`account-disconnect-${a.account_id}`}
         disabled={busy}
         onClick={async () => {

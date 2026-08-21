@@ -14,7 +14,8 @@ test("boot splash shows the TonWorker star, not the sparkle glyph", async ({ pag
   await page.goto("/");
   const mark = page.locator(".boot-mark");
   await expect(mark).toBeVisible();
-  await expect(mark.locator("svg")).toBeVisible(); // the Icon logo, not a text glyph
+  // Ton mark is a PNG <img> (not the upstream SVG star glyph).
+  await expect(mark.getByTestId("ton-logo")).toBeVisible();
   await expect(mark).not.toContainText("✦");
   await expect(page.getByText(/Starting TonWorker|Restoring your session/)).toBeVisible();
 });

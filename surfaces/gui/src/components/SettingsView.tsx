@@ -44,6 +44,7 @@ import { ModelsTab } from "./ManageTabs";
 import { MemorySection } from "./MemorySection";
 import { PersonasTab } from "./PersonasTab";
 import { SkillsTab } from "./SkillsTab";
+import { GalleryModal } from "./GalleryModal";
 import { showPersonas } from "../flags";
 
 // Settings, restructured (Option 2) into a full-page surface that mirrors IntegrationsView's shell:
@@ -390,10 +391,13 @@ function VoiceInputSection() {
   );
 }
 
-// -- Personas: installed/enabled/delete management + dir/Git importer.
-// Persona Gallery promo hidden — cloud gallery / managed catalog unavailable.
+// -- Personas: installed/enabled/delete management, the dir/Git importer, and the
+// entry point to the Persona Gallery (a screen-sized modal — installs finish back
+// here, disabled pending consent; a gallery install re-mounts the list in place).
 function PersonasSection({ onOpenPersona }: { onOpenPersona?: (id: string) => void }) {
   const { t } = useI18n();
+  const [galleryBump, setGalleryBump] = useState(0);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   return (
     <section>
@@ -401,7 +405,27 @@ function PersonasSection({ onOpenPersona }: { onOpenPersona?: (id: string) => vo
         title={t("Personas")}
         sub={t("Which coworkers are enabled and shown in the picker, plus installing new persona bundles.")}
       />
-      <PersonasTab onOpenPersona={onOpenPersona} />
+      <PersonasTab key={galleryBump} onOpenPersona={onOpenPersona} />
+      <button
+        className="mt-6 w-full rounded-xl2 border border-line bg-panel px-4 py-3.5 flex items-center gap-3 text-left hover:border-lineStrong"
+        data-testid="gallery-link"
+        onClick={() => setGalleryOpen(true)}
+      >
+        <Icon name="sparkle" size={16} className="text-accent shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13.5px] font-medium">{t("Browse the Persona Gallery")}</span>
+          <span className="block text-[12px] text-muted">
+            {t("Curated coworkers from the TonWorker team — see what each can do before installing.")}
+          </span>
+        </span>
+        <span className="text-[12.5px] text-accent shrink-0">{t("Open →")}</span>
+      </button>
+      {galleryOpen && (
+        <GalleryModal
+          onClose={() => setGalleryOpen(false)}
+          onInstalled={() => setGalleryBump((b) => b + 1)}
+        />
+      )}
     </section>
   );
 }

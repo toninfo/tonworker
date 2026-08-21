@@ -1,23 +1,28 @@
 import { useState } from "react";
 import {
+  connectManaged,
   disconnectGcalAccount,
   setGcalDefaultAccount,
   type GmailAccount,
 } from "../../api";
 import { ConnectorBadge } from "../../connectors/ConnectorIcon";
-import { useI18n } from "../../i18n/react";
-import { AddConnectionModal } from "./AddConnectionModal";
 import type { DetailProps } from "./ConnectorsSection";
 import { ToolsDisclosure } from "./ToolsDisclosure";
 import { FOOT, GRP, GRP_H, PILL_ACCENT, ROW, TAG_ACCENT, TAG_WARN, XBTN } from "./ui";
 
-// Google Calendar detail: multi-account list. Manual OAuth token connect only
-// (managed one-click retired).
+// The Google Calendar detail page: connected accounts (multi-account, Default
+// badge, per-account disconnect) — Gmail's page minus the privacy filters.
+// Adding an account launches managed OAuth DIRECTLY (one connect mode, no modal).
 
-export function CalendarDetail({ c, onChanged }: DetailProps) {
-  const { t } = useI18n();
-  const [adding, setAdding] = useState(false);
-  const accounts = (c.accounts ?? []) as GmailAccount[];
+export function CalendarDetail({ c, cloud, slack: _slack, onChanged }: DetailProps) {
+  const [busy, setBusy] = useState(false);
+  const accounts = (c.accounts ?? []) as GmailAccount[]; // email-keyed (pre-generic-layer shape)
+
+  const addAccount = async () => {
+    setBusy(true);
+    await connectManaged("google_calendar"); // completes in the system browser; the poll picks it up
+    setTimeout(() => setBusy(false), 2500);
+  };
 
   return (
     <div data-testid="gcal-detail">
@@ -32,36 +37,43 @@ export function CalendarDetail({ c, onChanged }: DetailProps) {
               <>
                 <span className="w-2 h-2 rounded-full bg-ok" />
                 <span data-testid="gcal-status">
-                  {accounts.length === 1
-                    ? t("{n} account", { n: accounts.length })
-                    : t("{n} accounts", { n: accounts.length })}
+                  {accounts.length} account{accounts.length === 1 ? "" : "s"}
                 </span>
               </>
             ) : (
-              <span>{t("Not connected")}</span>
+              <span>Not connected</span>
             )}
           </div>
         </div>
         <button
-          className={PILL_ACCENT}
+          className={PILL_ACCENT + (c.managed_paused ? " opacity-50" : "")}
           data-testid="add-account-btn"
-          onClick={() => setAdding(true)}
+          onClick={addAccount}
+          disabled={busy || !cloud?.signed_in || c.managed_paused}
+          title={
+            c.managed_paused
+              ? "One-click Google sign-in is coming soon"
+              : cloud?.signed_in
+                ? ""
+                : "Sign in to TonWorker Cloud first"
+          }
         >
-          {t("＋ Add account")}
+          {c.managed_paused ? "＋ Add account · Coming soon" : busy ? "Check your browser…" : "＋ Add account"}
         </button>
       </div>
 
       {!c.connected && (
         <div className={GRP}>
           <div className={ROW + " text-[12.5px] text-muted"}>
-            {t("Sign in with Google — each account stays separate, agents say which one they use.")}
+            Sign in with Google — each account stays separate, agents say which one they use.
+            {cloud?.signed_in ? "" : " Requires cloud sign-in."}
           </div>
         </div>
       )}
 
       {accounts.length > 0 && (
         <>
-          <div className={GRP_H + " !mt-0"}>{t("Accounts")}</div>
+          <div className={GRP_H + " !mt-0"}>Accounts</div>
           <div className={GRP} data-testid="gcal-accounts">
             {accounts.map((a) => (
               <AccountRow key={a.email} a={a} onChanged={onChanged} />
@@ -72,32 +84,21 @@ export function CalendarDetail({ c, onChanged }: DetailProps) {
 
       <ToolsDisclosure c={c} onChanged={onChanged} />
       <div className={FOOT + " mt-2"}>
-        {t(
-          "Creating, changing, or deleting events always asks for your approval first, and the approval names the account.",
-        )}
+        Creating, changing, or deleting events always asks for your approval first, and the
+        approval names the account.
       </div>
-
-      {adding && (
-        <AddConnectionModal
-          c={c}
-          title={t("＋ Add account")}
-          onClose={() => setAdding(false)}
-          onChanged={onChanged}
-        />
-      )}
     </div>
   );
 }
 
 function AccountRow({ a, onChanged }: { a: GmailAccount; onChanged: () => void }) {
-  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   return (
     <div className={ROW} data-testid={`gcal-account-${a.email}`}>
       <span className="min-w-0 flex-1 flex items-center gap-2">
         <span className="text-[13px] font-medium truncate">{a.email}</span>
-        {a.default && <span className={TAG_ACCENT}>{t("Default")}</span>}
-        {a.needs_reauth && <span className={TAG_WARN}>⚠ {t("Sign in again")}</span>}
+        {a.default && <span className={TAG_ACCENT}>Default</span>}
+        {a.needs_reauth && <span className={TAG_WARN}>⚠ Sign in again</span>}
       </span>
       {!a.default && (
         <button
@@ -108,12 +109,12 @@ function AccountRow({ a, onChanged }: { a: GmailAccount; onChanged: () => void }
             onChanged();
           }}
         >
-          {t("Make default")}
+          Make default
         </button>
       )}
       <button
         className={XBTN}
-        title={t("Disconnect this account")}
+        title="Disconnect this account"
         data-testid={`gcal-disconnect-${a.email}`}
         disabled={busy}
         onClick={async () => {

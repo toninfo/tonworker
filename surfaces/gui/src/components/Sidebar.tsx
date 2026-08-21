@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  announceCloudChanged,
   AUTOMATIONS_CHANGED,
+  CLOUD_CHANGED,
+  cloudLogin,
+  cloudLogout,
   getAutomations,
+  getCloudStatus,
   getPersonas,
   getSettings,
   INBOX_UNLOCK,
   PERSONAS_CHANGED,
   setNavLayout,
+  waitForCloudSignIn,
   type Automation,
+  type CloudStatus,
   type Persona,
   type RecentWorkspace,
   type SurfaceVisibility,
@@ -184,19 +191,28 @@ export function Sidebar(props: Props) {
   const { t } = useI18n();
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
-  // App menu anchor — cloud account / managed OAuth removed; footer is local nav only.
+  // The account row (§26): cloud sign-in status drives the avatar/name/dot; refreshed on
+  // focus and whenever the menu opens (sign-in completes out-of-band in the browser).
+  const [cloud, setCloud] = useState<CloudStatus | null>(null);
   // Inbox chip sticky unlock (§26): absent until the product first parks an item (or a
   // session first goes Unattended), then permanent. Per-device, like nav collapse.
   const [inboxUnlocked, setInboxUnlocked] = useState(
     () => localStorage.getItem("ocw:inbox-unlocked") === "1",
   );
+  const refreshCloud = () => getCloudStatus().then(setCloud).catch(() => {});
   useEffect(() => {
+    refreshCloud();
+    const onFocus = () => refreshCloud();
+    window.addEventListener("focus", onFocus);
+    window.addEventListener(CLOUD_CHANGED, onFocus);
     const unlock = () => {
       localStorage.setItem("ocw:inbox-unlocked", "1");
       setInboxUnlocked(true);
     };
     window.addEventListener(INBOX_UNLOCK, unlock);
     return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(CLOUD_CHANGED, onFocus);
       window.removeEventListener(INBOX_UNLOCK, unlock);
     };
   }, []);
@@ -369,6 +385,13 @@ export function Sidebar(props: Props) {
       {trailing != null && <span aria-hidden>{trailing}</span>}
     </button>
   );
+
+  // Display identity for the account row: the cloud profile only carries the email, so the
+  // row shows the capitalized local part ("rohit@…" → "Rohit"); the menu header shows it all.
+  const accountEmail = cloud?.signed_in ? cloud.account : "";
+  const accountName = accountEmail
+    ? accountEmail.split("@")[0].replace(/^./, (c) => c.toUpperCase())
+    : "";
 
   // Roll the per-session attention/liveness up to the persona header and the footer Inbox: the
   // accent count bubbles (sum), the liveness dot aggregates (working wins over sleeping).
@@ -1121,7 +1144,9 @@ export function Sidebar(props: Props) {
         </div>
       </div>
 
-      {/* Bottom: app menu (Inbox / Connectors / Settings / Automations) — no cloud account. */}
+      {/* Bottom (§26): exactly ONE row — the account anchor. The inbox chip on it is
+          state-driven with a sticky unlock (quiet when empty, accent + count when pending);
+          everything else lives in the account menu, which ALWAYS lists Inbox + Connectors. */}
       <div className="px-2.5 py-2 border-t border-line">
         <div className="relative">
           {appMenuOpen && (
@@ -1132,6 +1157,39 @@ export function Sidebar(props: Props) {
                 data-testid="account-menu"
                 role="menu"
               >
+                {cloud?.signed_in ? (
+                  <div
+                    className="px-3 py-1.5 mb-1 text-[11px] text-faint truncate border-b border-line"
+                    title={`${accountEmail} · TonWorker Cloud`}
+                  >
+                    {accountEmail} · TonWorker Cloud
+                  </div>
+                ) : (
+                  <>
+                    <div className="px-3 py-1.5 text-[11px] text-faint border-b border-line">
+                      {t("Not signed in — one-click connections need TonWorker Cloud")}
+                    </div>
+                    <button
+                      className="w-full flex items-center gap-2.5 px-3 py-1.5 mb-1 text-[13px] text-left text-accent hover:bg-paper"
+                      data-testid="account-sign-in"
+                      onClick={async () => {
+                        setAppMenuOpen(false);
+                        // Opens the system browser server-side; completion lands out-of-band,
+                        // so poll until it flips (refocusing the window also refetches).
+                        await cloudLogin().catch(() => {});
+                        waitForCloudSignIn((s) => {
+                          if (s) setCloud(s);
+                          // Other always-mounted consumers (Settings' telemetry card,
+                          // connector panes) refetch on this.
+                          if (s?.signed_in) announceCloudChanged();
+                        });
+                      }}
+                    >
+                      <Icon name="plug" size={15} className="shrink-0" />{" "}
+                      {t("Sign in to TonWorker Cloud")}
+                    </button>
+                  </>
+                )}
                 {appMenuItem(
                   "inbox",
                   t("Inbox"),
@@ -1150,6 +1208,15 @@ export function Sidebar(props: Props) {
                 )}
                 {appMenuItem("clock", t("Automations"), props.onOpenScheduled, props.scheduledActive)}
                 {appMenuItem("audit", t("Activity"), props.onOpenAudit, props.auditActive)}
+                {cloud?.signed_in && (
+                  <>
+                    <div className="h-px bg-line my-1 mx-2" />
+                    {appMenuItem("signOut", t("Sign out"), async () => {
+                      await cloudLogout().catch(() => {});
+                      announceCloudChanged();
+                    })}
+                  </>
+                )}
               </div>
             </>
           )}
@@ -1160,18 +1227,39 @@ export function Sidebar(props: Props) {
               (appMenuOpen ? "bg-paper text-ink" : "hover:bg-paper")
             }
             data-testid="account-row"
-            onClick={() => setAppMenuOpen((v) => !v)}
+            onClick={() => {
+              if (!appMenuOpen) refreshCloud();
+              setAppMenuOpen((v) => !v);
+            }}
             aria-haspopup="menu"
             aria-expanded={appMenuOpen}
-            aria-label={t("Menu")}
+            aria-label={
+              cloud?.signed_in
+                ? t("Account: {email}", { email: accountEmail })
+                : t("Account: not signed in")
+            }
           >
             <span
-              className="w-6 h-6 rounded-full grid place-items-center text-[10.5px] font-semibold shrink-0 bg-paper text-faint border border-line"
+              className={
+                "w-6 h-6 rounded-full grid place-items-center text-[10.5px] font-semibold shrink-0 " +
+                (cloud?.signed_in
+                  ? "bg-accentSoft text-accent"
+                  : "bg-paper text-faint border border-line")
+              }
               aria-hidden
             >
-              O
+              {cloud?.signed_in ? accountName.slice(0, 1).toUpperCase() : "?"}
             </span>
-            <span className="truncate text-muted">{t("TonWorker")}</span>
+            <span className={"truncate " + (cloud?.signed_in ? "" : "text-muted")}>
+              {cloud?.signed_in ? accountName : t("Not signed in")}
+            </span>
+            {cloud?.signed_in && (
+              <span
+                className="w-[7px] h-[7px] rounded-full bg-ok shrink-0"
+                title={t("Signed in to TonWorker Cloud")}
+                aria-hidden
+              />
+            )}
             <span className="flex-1" />
             {inboxUnlocked && (
               <span

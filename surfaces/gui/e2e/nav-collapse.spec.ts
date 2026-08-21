@@ -23,9 +23,12 @@ test("collapse hides the sidebar and reclaims the width; reveal button docks it 
 test("⌘B toggles the sidebar collapse", async ({ page }) => {
   await page.goto("/");
   const app = page.locator(".app");
-  await page.keyboard.press("Meta+b");
+  await expect(page.locator(".sidebar")).toBeVisible();
+  // Ensure focus isn't trapped in a field; Linux CI needs Control (not Meta).
+  await page.locator("body").click({ position: { x: 8, y: 8 } });
+  await page.keyboard.press("Control+b");
   await expect(app).toHaveClass(/nav-collapsed/);
-  await page.keyboard.press("Meta+b");
+  await page.keyboard.press("Control+b");
   await expect(app).not.toHaveClass(/nav-collapsed/);
 });
 
